@@ -20,7 +20,7 @@ export default async function DashboardSummary() {
 
   // last 30 deltas
   const { data: deltas } = await supabase
-    .from("v_report_deltas")
+    .from("v_report_deltas_effective")
     .select("report_date, water_delta, electric_delta")
     .order("report_date", { ascending: false })
     .limit(30);

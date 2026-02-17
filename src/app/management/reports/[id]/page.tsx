@@ -57,7 +57,7 @@ export default async function ReportDetailPage({
 
   const { data: followup } = await supabase
     .from("maintenance_followups")
-    .select("status, assigned_to, internal_notes, updated_at")
+    .select("status, assigned_to, internal_notes, reading_anomaly_type, reading_anomaly_notes, corrected_water_reading, corrected_electric_reading, updated_at")
     .eq("report_id", reportId)
     .maybeSingle();
 
@@ -194,46 +194,65 @@ export default async function ReportDetailPage({
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">Follow-up (management)</h2>
 
-          <form action={`/management/reports/${reportId}/followup`} method="post" className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Status</div>
-              <select name="status" defaultValue={followup?.status || "open"} className="w-full rounded border px-2 py-2 text-sm">
-                <option value="open">open</option>
-                <option value="in_progress">in progress</option>
-                <option value="resolved">resolved</option>
-              </select>
-            </div>
+          <form action={`/management/reports//followup`} method="post" className="space-y-4">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">Status</div>
+      <select name="status" defaultValue={followup?.status || "open"} className="w-full rounded border px-2 py-2 text-sm">
+        <option value="open">open</option>
+        <option value="in_progress">in progress</option>
+        <option value="resolved">resolved</option>
+      </select>
+    </div>
 
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Assigned to</div>
-              <select name="assigned_to" defaultValue={followup?.assigned_to || ""} className="w-full rounded border px-2 py-2 text-sm">
-                <option value="">Unassigned</option>
-                {(staff || []).map((p: any) => (
-                  <option key={p.id} value={p.id}>
-                    {p.full_name} ({p.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">Assigned to</div>
+      <select name="assigned_to" defaultValue={followup?.assigned_to || ""} className="w-full rounded border px-2 py-2 text-sm">
+        <option value="">Unassigned</option>
+        {(staff || []).map((p: any) => (
+          <option key={p.id} value={p.id}>
+            {p.full_name} ({p.role})
+          </option>
+        ))}
+      </select>
+    </div>
 
-            <div className="flex items-end">
-              <button className="w-full rounded border px-3 py-2 text-sm">Save</button>
-            </div>
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">Reading anomaly</div>
+      <select name="reading_anomaly_type" defaultValue={followup?.reading_anomaly_type || "none"} className="w-full rounded border px-2 py-2 text-sm">
+        <option value="none">none</option>
+        <option value="typo_suspected">typo suspected</option>
+        <option value="meter_rollover_reset">meter rollover/reset</option>
+        <option value="other">other</option>
+      </select>
+    </div>
 
-            <div className="md:col-span-3 space-y-1">
-              <div className="text-xs text-muted-foreground">Internal notes</div>
-              <textarea
-                name="internal_notes"
-                defaultValue={followup?.internal_notes || ""}
-                rows={4}
-                className="w-full rounded border px-3 py-2 text-sm"
-                placeholder="What’s the plan? What was done? Who is responsible?"
-              />
-              <div className="text-xs text-muted-foreground">
-                Last updated: {followup?.updated_at ? new Date(followup.updated_at).toLocaleString() : "—"}
-              </div>
-            </div>
-          </form>
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">Save</div>
+      <button type="submit" className="w-full rounded border px-3 py-2 text-sm">Save</button>
+    </div>
+
+    <div className="md:col-span-2 space-y-1">
+      <div className="text-xs text-muted-foreground">Corrected water reading (optional)</div>
+      <input name="corrected_water_reading" defaultValue={followup?.corrected_water_reading ?? ""} className="w-full rounded border px-3 py-2 text-sm" placeholder="Leave blank unless correcting" />
+    </div>
+
+    <div className="md:col-span-2 space-y-1">
+      <div className="text-xs text-muted-foreground">Corrected electric reading (optional)</div>
+      <input name="corrected_electric_reading" defaultValue={followup?.corrected_electric_reading ?? ""} className="w-full rounded border px-3 py-2 text-sm" placeholder="Leave blank unless correcting" />
+    </div>
+
+    <div className="md:col-span-4 space-y-1">
+      <div className="text-xs text-muted-foreground">Anomaly notes</div>
+      <input name="reading_anomaly_notes" defaultValue={followup?.reading_anomaly_notes || ""} className="w-full rounded border px-3 py-2 text-sm" placeholder="Optional: explain why the delta is negative (reset, rollover, etc.)" />
+    </div>
+
+    <div className="md:col-span-4 space-y-1">
+      <div className="text-xs text-muted-foreground">Internal notes</div>
+      <textarea name="internal_notes" defaultValue={followup?.internal_notes || ""} className="w-full rounded border px-3 py-2 text-sm" rows={4} placeholder="Notes for management / maintenance follow-up" />
+    </div>
+  </div>
+</form>
         </section>
 
         {/* What needs attention */}

@@ -29,7 +29,7 @@ export default async function ManagementDashboardPage() {
 
   // For the *cards*, we want the latest row even if it's null (shows that the delta isn't computable yet)
   const { data: deltasAll, error: deltasErr } = await supabase
-    .from("v_report_deltas")
+    .from("v_report_deltas_effective")
     .select("report_date, water_delta, electric_delta")
     .order("report_date", { ascending: false })
     .limit(60);
@@ -61,10 +61,20 @@ export default async function ManagementDashboardPage() {
   // helpful: latest computable delta (for warning logic)
   const latestDelta = deltasNonNull?.[0];
 
+  const { data: latestFollowup } = latestDelta?.report_id
+    ? await supabase
+        .from("maintenance_followups")
+        .select("reading_anomaly_type")
+        .eq("report_id", latestDelta.report_id)
+        .maybeSingle()
+    : { data: null };
+
+  const anomalyType = latestFollowup?.reading_anomaly_type || "none";
+
   const negativeWarnings: string[] = [];
-  if (latestDelta?.water_delta !== null && latestDelta?.water_delta < 0)
+  if (anomalyType !== "meter_rollover_reset" && latestDelta?.water_delta !== null && latestDelta?.water_delta < 0)
     negativeWarnings.push("Negative water delta (possible reading error/rollover)");
-  if (latestDelta?.electric_delta !== null && latestDelta?.electric_delta < 0)
+  if (anomalyType !== "meter_rollover_reset" && latestDelta?.electric_delta !== null && latestDelta?.electric_delta < 0)
     negativeWarnings.push("Negative electric delta (possible reading error/rollover)");
 
   const exceptionCount =

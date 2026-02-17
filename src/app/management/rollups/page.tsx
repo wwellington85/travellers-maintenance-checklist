@@ -33,7 +33,7 @@ export default async function RollupsPage() {
   const waterRate = Number((rates || []).find((r: any) => r.name === "water")?.rate_jmd ?? 0);
 
   const { data: rows, error } = await supabase
-    .from("v_report_deltas")
+    .from("v_report_deltas_effective")
     .select("report_date, water_delta, electric_delta")
     .order("report_date", { ascending: false })
     .limit(365);

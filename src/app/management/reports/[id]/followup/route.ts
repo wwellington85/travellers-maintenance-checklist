@@ -20,6 +20,14 @@ function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   );
 }
 
+function parseOptionalNumber(v: FormDataEntryValue | null) {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  const n = Number(s);
+  if (Number.isNaN(n)) return null;
+  return n;
+}
+
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id: reportId } = await ctx.params;
 
@@ -34,7 +42,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     return NextResponse.redirect(new URL("/auth/login", req.url), { status: 303 });
   }
 
-  // must be manager/admin (RLS will also enforce)
   const { data: me } = await supabase
     .from("profiles")
     .select("role,is_active")
@@ -46,9 +53,16 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   const form = await req.formData();
+
   const status = String(form.get("status") || "open");
   const assigned_to_raw = String(form.get("assigned_to") || "").trim();
   const internal_notes = String(form.get("internal_notes") || "").trim();
+
+  const reading_anomaly_type = String(form.get("reading_anomaly_type") || "none");
+  const reading_anomaly_notes = String(form.get("reading_anomaly_notes") || "").trim();
+
+  const corrected_water_reading = parseOptionalNumber(form.get("corrected_water_reading"));
+  const corrected_electric_reading = parseOptionalNumber(form.get("corrected_electric_reading"));
 
   const assigned_to = assigned_to_raw.length ? assigned_to_raw : null;
 
@@ -57,6 +71,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     status,
     assigned_to,
     internal_notes: internal_notes.length ? internal_notes : null,
+    reading_anomaly_type,
+    reading_anomaly_notes: reading_anomaly_notes.length ? reading_anomaly_notes : null,
+    corrected_water_reading,
+    corrected_electric_reading,
     updated_by: userData.user.id,
     updated_at: new Date().toISOString(),
   });
