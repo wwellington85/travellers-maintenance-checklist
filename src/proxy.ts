@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-function createSupabaseMiddlewareClient(req: NextRequest, res: NextResponse) {
+function createSupabaseProxyClient(req: NextRequest, res: NextResponse) {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,9 +20,9 @@ function createSupabaseMiddlewareClient(req: NextRequest, res: NextResponse) {
   );
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createSupabaseMiddlewareClient(req, res);
+  const supabase = createSupabaseProxyClient(req, res);
 
   const {
     data: { user },
