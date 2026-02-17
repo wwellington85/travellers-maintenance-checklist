@@ -56,24 +56,33 @@ export default async function ManagementReportsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-t align-top">
-                      <td className="py-2 pr-4">{r.report_date}</td>
-                      <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
-                      <td className="py-2 pr-4">{r.water_meter_reading}</td>
-                      <td className="py-2 pr-4">{r.electric_meter_reading}</td>
-                      <td className="py-2 pr-4">
-                        <div className="max-w-[420px] truncate text-muted-foreground">
-                          {r.issues_summary || "—"}
-                        </div>
-                      </td>
-                      <td className="py-2 pr-0">
-                        <Link className="underline" href={`/management/reports/${r.id}`}>
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {rows.map((r: any) => {
+                    const rid = r?.id;
+                    const canView = typeof rid === "string" && rid.length > 0;
+
+                    return (
+                      <tr key={rid || `${r.report_date}-${r.submitted_at}`} className="border-t align-top">
+                        <td className="py-2 pr-4">{r.report_date}</td>
+                        <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
+                        <td className="py-2 pr-4">{r.water_meter_reading}</td>
+                        <td className="py-2 pr-4">{r.electric_meter_reading}</td>
+                        <td className="py-2 pr-4">
+                          <div className="max-w-[420px] truncate text-muted-foreground">
+                            {r.issues_summary || "—"}
+                          </div>
+                        </td>
+                        <td className="py-2 pr-0">
+                          {canView ? (
+                            <Link className="underline" href={`/management/reports/${rid}`}>
+                              View
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No ID</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function yesNo(v: any) {
   if (v === true) return "OK";
   if (v === false) return "Issue";
@@ -17,6 +20,33 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
 
   const reportId = params.id;
 
+  if (!UUID_RE.test(reportId)) {
+    return (
+      <main className="min-h-screen p-6">
+        <div className="mx-auto max-w-4xl space-y-6">
+          <header className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Report Detail</h1>
+            <div className="flex items-center gap-3">
+              <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
+                Back
+              </Link>
+              <SignOutButton />
+            </div>
+          </header>
+
+          <div className="rounded-xl border bg-white p-6 shadow-sm">
+            <p className="text-sm text-red-600">
+              Invalid report id: <span className="font-mono">{reportId}</span>
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This usually happens if a report row has a missing id or a bad link.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const { data: report, error: repErr } = await supabase
     .from("maintenance_reports")
     .select("*")
@@ -29,6 +59,16 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
     .eq("report_id", reportId)
     .order("category", { ascending: true })
     .order("item_key", { ascending: true });
+
+  const { data: keyRows } = await supabase
+    .from("generator_item_keys")
+    .select("category,item_key,label")
+    .eq("is_active", true);
+
+  const labelMap = new Map<string, string>();
+  (keyRows || []).forEach((k: any) => {
+    labelMap.set(`${k.category}:${k.item_key}`, k.label);
+  });
 
   if (repErr) {
     return (
@@ -161,13 +201,17 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
             <p className="text-sm text-red-600">{genErr.message}</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-              {(genItems || []).map((g, idx) => (
-                <div key={idx} className="rounded-lg border p-3">
-                  <div className="text-xs text-muted-foreground">{g.category} • {g.item_key}</div>
-                  <div className="font-semibold">{g.status}</div>
-                  {g.notes ? <div className="text-xs text-muted-foreground mt-1">{g.notes}</div> : null}
-                </div>
-              ))}
+              {(genItems || []).map((g: any, idx: number) => {
+                const label = labelMap.get(`${g.category}:${g.item_key}`) || g.item_key;
+                return (
+                  <div key={idx} className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">{g.category}</div>
+                    <div className="font-medium">{label}</div>
+                    <div className="mt-1 font-semibold">{g.status}</div>
+                    {g.notes ? <div className="text-xs text-muted-foreground mt-1">{g.notes}</div> : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>

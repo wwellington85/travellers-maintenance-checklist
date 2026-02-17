@@ -43,37 +43,48 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role checks (read profile role)
-  if (user && (isManagementRoute || isAdminRoute)) {
-    const { data: profile } = await supabase
+  // If logged in, grab profile once when needed
+  let profile: { role: string; is_active: boolean } | null = null;
+
+  async function getProfile() {
+    if (profile) return profile;
+    const { data } = await supabase
       .from("profiles")
       .select("role,is_active")
-      .eq("id", user.id)
+      .eq("id", user!.id)
       .single();
+    profile = (data as any) || null;
+    return profile;
+  }
 
-    if (!profile?.is_active) {
+  // Role checks for management/admin routes
+  if (user && (isManagementRoute || isAdminRoute)) {
+    const p = await getProfile();
+
+    if (!p?.is_active) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
 
-    if (isAdminRoute && profile.role !== "admin") {
+    if (isAdminRoute && p.role !== "admin") {
       const url = req.nextUrl.clone();
       url.pathname = "/maintenance/new";
       return NextResponse.redirect(url);
     }
 
-    if (isManagementRoute && !["manager", "admin"].includes(profile.role)) {
+    if (isManagementRoute && !["manager", "admin"].includes(p.role)) {
       const url = req.nextUrl.clone();
       url.pathname = "/maintenance/new";
       return NextResponse.redirect(url);
     }
   }
 
-  // Logged in user visiting /auth routes -> send to default page
+  // Logged in user visiting /auth routes -> route based on role
   if (user && isAuthRoute && pathname !== "/auth/logout") {
+    const p = await getProfile();
     const url = req.nextUrl.clone();
-    url.pathname = "/maintenance/new";
+    url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new";
     return NextResponse.redirect(url);
   }
 
