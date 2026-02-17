@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function fmt(n: any) {
@@ -11,18 +10,15 @@ function fmt(n: any) {
 export default async function DashboardSummary() {
   const supabase = await createSupabaseServerClient();
 
-  // Current rates
-  const { data: rates } = await supabase
-    .from("v_current_utility_rates")
-    .select("name, unit_label, rate_jmd");
-
+  // current rates
+  const { data: rates } = await supabase.from("v_current_utility_rates").select("name, unit_label, rate_jmd");
   const electric = (rates || []).find((r: any) => r.name === "electric");
   const water = (rates || []).find((r: any) => r.name === "water");
 
   const electricRate = Number(electric?.rate_jmd ?? 0);
   const waterRate = Number(water?.rate_jmd ?? 0);
 
-  // Last 30 deltas
+  // last 30 deltas
   const { data: deltas } = await supabase
     .from("v_report_deltas")
     .select("report_date, water_delta, electric_delta")
@@ -54,36 +50,22 @@ export default async function DashboardSummary() {
     .sort((a, b) => b.cost_jmd - a.cost_jmd)
     .slice(0, 3);
 
-  // Open follow-ups (unresolved)
+  // Open follow-ups
   const { data: openFollowups } = await supabase
     .from("maintenance_followups")
-    .select("report_id, status, updated_at")
+    .select("report_id,status,updated_at")
     .neq("status", "resolved")
     .order("updated_at", { ascending: false })
     .limit(6);
 
   return (
     <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Management overview</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Rates: Electric JMD {fmt(electricRate)} / {electric?.unit_label ?? "unit"} • Water JMD {fmt(waterRate)} /{" "}
-            {water?.unit_label ?? "unit"}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/rollups">
-            Rollups
-          </Link>
-          <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
-            Reports
-          </Link>
-          <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/exceptions">
-            Exceptions
-          </Link>
-        </div>
+      <div>
+        <h2 className="text-lg font-semibold">Management overview</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Rates: Electric JMD {fmt(electricRate)} / {electric?.unit_label ?? "unit"} • Water JMD {fmt(waterRate)} /{" "}
+          {water?.unit_label ?? "unit"}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -130,7 +112,7 @@ export default async function DashboardSummary() {
           <div className="mt-3 space-y-2 text-sm">
             {(openFollowups || []).length ? (
               (openFollowups || []).map((f: any) => (
-                <Link
+                <a
                   key={f.report_id}
                   className="block rounded border p-3 hover:bg-gray-50"
                   href={`/management/reports/${f.report_id}`}
@@ -142,7 +124,7 @@ export default async function DashboardSummary() {
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground font-mono truncate">{f.report_id}</div>
-                </Link>
+                </a>
               ))
             ) : (
               <div className="text-sm text-muted-foreground">No open follow-ups.</div>
