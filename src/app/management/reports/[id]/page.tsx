@@ -13,9 +13,8 @@ function fmt(n: any) {
   return num.toLocaleString();
 }
 
-function statusPill(s: string) {
-  const base = "inline-flex items-center rounded-full border px-2 py-1 text-xs";
-  return <span className={base}>{s}</span>;
+function pill(text: string) {
+  return <span className="inline-flex items-center rounded-full border px-2 py-1 text-xs">{text}</span>;
 }
 
 export default async function ReportDetailPage({
@@ -29,27 +28,7 @@ export default async function ReportDetailPage({
   if (!userData.user) redirect("/auth/login");
 
   const { id: reportId } = await params;
-
-  if (!UUID_RE.test(reportId)) {
-    return (
-      <main className="min-h-screen p-6">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <header className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Report Detail</h1>
-            <div className="flex items-center gap-3">
-              <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">Back</Link>
-              <SignOutButton />
-            </div>
-          </header>
-          <div className="rounded-xl border bg-white p-6 shadow-sm">
-            <p className="text-sm text-red-600">
-              Invalid report id: <span className="font-mono">{reportId}</span>
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
   const { data: report, error: repErr } = await supabase
     .from("maintenance_reports")
@@ -57,44 +36,38 @@ export default async function ReportDetailPage({
     .eq("id", reportId)
     .single();
 
-  if (repErr || !report) {
-    return (
-      <main className="min-h-screen p-6">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <header className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Report Detail</h1>
-            <div className="flex items-center gap-3">
-              <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">Back</Link>
-              <SignOutButton />
-            </div>
-          </header>
-          <div className="rounded-xl border bg-white p-6 shadow-sm text-sm text-red-600">
-            {repErr?.message || "Report not found"}
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (repErr || !report) redirect("/management/reports");
 
   const reportDate = report.report_date;
 
-  // Deltas + exceptions (what management cares about)
   const { data: deltaRow } = await supabase
     .from("v_report_deltas")
-    .select("report_date, water_delta, electric_delta")
+    .select("water_delta, electric_delta")
     .eq("report_date", reportDate)
     .maybeSingle();
 
   const { data: exRow } = await supabase
     .from("v_report_exceptions")
-    .select("report_date, exception_reasons, generator_not_completed_count")
+    .select("exception_reasons, generator_not_completed_count")
     .eq("report_date", reportDate)
     .maybeSingle();
 
   const exceptionReasons: string[] = exRow?.exception_reasons || [];
   const genNotCompletedCount = exRow?.generator_not_completed_count ?? 0;
 
-  // Generator items + labels
+  const { data: followup } = await supabase
+    .from("maintenance_followups")
+    .select("status, assigned_to, internal_notes, updated_at")
+    .eq("report_id", reportId)
+    .maybeSingle();
+
+  const { data: staff } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, is_active")
+    .in("role", ["maintenance", "manager", "admin"])
+    .eq("is_active", true)
+    .order("full_name", { ascending: true });
+
   const { data: genItems, error: genErr } = await supabase
     .from("generator_check_items")
     .select("category,item_key,status,notes")
@@ -113,18 +86,40 @@ export default async function ReportDetailPage({
     label: labelMap.get(`${g.category}:${g.item_key}`) || g.item_key,
   }));
 
-  const gensVisual = gens.filter((g: any) => g.category === "visual");
-  const gensOperational = gens.filter((g: any) => g.category === "operational");
-
   const notCompleted = gens.filter((g: any) => g.status === "Not Completed");
   const completed = gens.filter((g: any) => g.status === "Completed");
   const na = gens.filter((g: any) => g.status === "N/A");
 
-  // A few “quick status” fields for management
-  const soft1 = report.softwater_tank_1 ?? "—";
-  const soft2 = report.softwater_tank_2 ?? "—";
-  const tanks = report.water_tanks_status ?? "—";
-  const pump = report.pump_psi ?? "—";
+  // Lights issues: any boolean false = issue
+  const lightsChecks: { label: string; key: string }[] = [
+    { label: "Deluxe", key: "lights_deluxe_ok" },
+    { label: "Superior", key: "lights_superior_ok" },
+    { label: "Standard", key: "lights_standard_ok" },
+    { label: "Garden lights", key: "lights_garden_ok" },
+    { label: "Pool deck lights", key: "lights_pooldeck_ok" },
+    { label: "Restaurant lights", key: "lights_restaurant_ok" },
+    { label: "Restaurant deck lights", key: "lights_restaurant_deck_ok" },
+  ];
+  const lightsIssues = lightsChecks
+    .filter((c) => report[c.key] === false)
+    .map((c) => c.label);
+
+  // Plumbing issues: any boolean false = issue
+  const plumbingChecks: { label: string; key: string }[] = [
+    { label: "Restaurant Male", key: "plumbing_restaurant_male_ok" },
+    { label: "Restaurant Female", key: "plumbing_restaurant_female_ok" },
+    { label: "Scuba shower", key: "plumbing_scuba_shower_ok" },
+    { label: "Gym Footwash", key: "plumbing_gym_footwash_ok" },
+    { label: "Pool Shower", key: "plumbing_pool_shower_ok" },
+    { label: "Family Room bathroom", key: "plumbing_family_room_bathroom_ok" },
+    { label: "Laundry Female Bathroom", key: "plumbing_laundry_female_bathroom_ok" },
+    { label: "Laundry Male Bathroom", key: "plumbing_laundry_male_bathroom_ok" },
+    { label: "Lobby Male bathroom", key: "plumbing_lobby_male_bathroom_ok" },
+    { label: "Lobby Female bathroom", key: "plumbing_lobby_female_bathroom_ok" },
+  ];
+  const plumbingIssues = plumbingChecks
+    .filter((c) => report[c.key] === false)
+    .map((c) => c.label);
 
   return (
     <main className="min-h-screen p-6">
@@ -138,12 +133,17 @@ export default async function ReportDetailPage({
             <p className="mt-1 text-xs text-muted-foreground font-mono">{report.id}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">Back</Link>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href={`/management/reports/${reportId}/print`}>
+              Print
+            </Link>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
+              Back
+            </Link>
             <SignOutButton />
           </div>
         </header>
 
-        {/* AT A GLANCE */}
+        {/* At a glance */}
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">At a glance</h2>
 
@@ -160,21 +160,20 @@ export default async function ReportDetailPage({
             </div>
             <div className="rounded-lg border p-4">
               <div className="text-xs text-muted-foreground">Generator</div>
-              <div className="mt-1 text-sm">
-                {statusPill(`Completed: ${completed.length}`)}{" "}
-                {statusPill(`Not Completed: ${notCompleted.length}`)}{" "}
-                {statusPill(`N/A: ${na.length}`)}
+              <div className="mt-2 text-sm">
+                {pill(`Completed: ${completed.length}`)}{" "}
+                {pill(`Not Completed: ${notCompleted.length}`)}{" "}
+                {pill(`N/A: ${na.length}`)}
               </div>
               <div className="mt-2 text-xs text-muted-foreground">
-                Not completed (view rule): {fmt(genNotCompletedCount)}
+                Not completed (rule): {fmt(genNotCompletedCount)}
               </div>
             </div>
             <div className="rounded-lg border p-4">
-              <div className="text-xs text-muted-foreground">Quick status</div>
+              <div className="text-xs text-muted-foreground">Property checks</div>
               <div className="mt-2 text-sm">
-                <div>Softwater: {soft1} / {soft2}</div>
-                <div>Tanks: {tanks}</div>
-                <div>Pump PSI: {pump}</div>
+                Lights issues: <span className="font-semibold">{lightsIssues.length || 0}</span><br />
+                Plumbing issues: <span className="font-semibold">{plumbingIssues.length || 0}</span>
               </div>
             </div>
           </div>
@@ -191,21 +190,85 @@ export default async function ReportDetailPage({
           )}
         </section>
 
-        {/* WHAT NEEDS ATTENTION */}
+        {/* Follow-up tracking */}
+        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-semibold">Follow-up (management)</h2>
+
+          <form action={`/management/reports/${reportId}/followup`} method="post" className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Status</div>
+              <select name="status" defaultValue={followup?.status || "open"} className="w-full rounded border px-2 py-2 text-sm">
+                <option value="open">open</option>
+                <option value="in_progress">in progress</option>
+                <option value="resolved">resolved</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Assigned to</div>
+              <select name="assigned_to" defaultValue={followup?.assigned_to || ""} className="w-full rounded border px-2 py-2 text-sm">
+                <option value="">Unassigned</option>
+                {(staff || []).map((p: any) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name} ({p.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button className="w-full rounded border px-3 py-2 text-sm">Save</button>
+            </div>
+
+            <div className="md:col-span-3 space-y-1">
+              <div className="text-xs text-muted-foreground">Internal notes</div>
+              <textarea
+                name="internal_notes"
+                defaultValue={followup?.internal_notes || ""}
+                rows={4}
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder="What’s the plan? What was done? Who is responsible?"
+              />
+              <div className="text-xs text-muted-foreground">
+                Last updated: {followup?.updated_at ? new Date(followup.updated_at).toLocaleString() : "—"}
+              </div>
+            </div>
+          </form>
+        </section>
+
+        {/* What needs attention */}
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold">What needs attention</h2>
-          <p className="text-sm text-muted-foreground">
-            Focused view. Only issues and “Not Completed” generator items.
-          </p>
 
           {report.issues_summary ? (
             <div className="rounded-lg border p-4">
               <div className="text-sm font-medium">Notes / issues</div>
-              <p className="mt-2 text-sm">{report.issues_summary}</p>
+              <p className="mt-2 text-sm whitespace-pre-wrap">{report.issues_summary}</p>
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">No issues noted.</div>
           )}
+
+          {lightsIssues.length ? (
+            <div className="rounded-lg border p-4">
+              <div className="text-sm font-medium">Lights flagged</div>
+              <ul className="mt-2 list-disc pl-5 text-sm">
+                {lightsIssues.map((x) => <li key={x}>{x}</li>)}
+              </ul>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Notes/material: {report.lights_issues_notes ?? "—"}
+              </div>
+            </div>
+          ) : null}
+
+          {plumbingIssues.length ? (
+            <div className="rounded-lg border p-4">
+              <div className="text-sm font-medium">Faucets / Toilets / Drains flagged</div>
+              <ul className="mt-2 list-disc pl-5 text-sm">
+                {plumbingIssues.map((x) => <li key={x}>{x}</li>)}
+              </ul>
+            </div>
+          ) : null}
 
           {genErr ? (
             <p className="text-sm text-red-600">{genErr.message}</p>
@@ -227,70 +290,56 @@ export default async function ReportDetailPage({
           )}
         </section>
 
-        {/* DETAILS (expandable) */}
+        {/* Details */}
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <details>
             <summary className="cursor-pointer text-sm text-muted-foreground">
-              Show full report details (meters, tanks, gas, plumbing, lights, all generator items)
+              Show full details (meters, tanks, gas, all generator items, lights, plumbing)
             </summary>
 
-            <div className="mt-5 space-y-6">
+            <div className="mt-5 space-y-5 text-sm">
               <div className="rounded-lg border p-4">
-                <div className="text-sm font-medium">Meters</div>
-                <div className="mt-2 text-sm">
+                <div className="font-medium">Meters</div>
+                <div className="mt-2">
                   Water: {fmt(report.water_meter_reading)} (time: {report.water_meter_time ?? "—"})<br />
                   Electric: {fmt(report.electric_meter_reading)} (time: {report.electric_meter_time ?? "—"})
                 </div>
               </div>
 
               <div className="rounded-lg border p-4">
-                <div className="text-sm font-medium">Gas levels</div>
-                <div className="mt-2 text-sm grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>Kitchen 1: {report.kitchen_tank_1 ?? "—"}</div>
-                  <div>Kitchen 2: {report.kitchen_tank_2 ?? "—"}</div>
-                  <div>Laundry 1: {report.laundry_tank_1 ?? "—"}</div>
-                  <div>Laundry 2: {report.laundry_tank_2 ?? "—"}</div>
-                  <div>Spare 1: {report.spare_tank_1 ?? "—"}</div>
-                  <div>Spare 2: {report.spare_tank_2 ?? "—"}</div>
+                <div className="font-medium">Lights</div>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {lightsChecks.map((c) => (
+                    <div key={c.key} className="rounded border p-2">
+                      {c.label}: <span className="font-semibold">{report[c.key] === false ? "Issue" : report[c.key] === true ? "OK" : "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-muted-foreground">
+                  Notes/material: {report.lights_issues_notes ?? "—"}
                 </div>
               </div>
 
               <div className="rounded-lg border p-4">
-                <div className="text-sm font-medium">Water system</div>
-                <div className="mt-2 text-sm">
-                  Heater temp: {report.water_heater_temp ?? "—"} (time: {report.water_heater_temp_time ?? "—"})<br />
-                  Softwater: {soft1} / {soft2}<br />
-                  Tanks: {tanks} (time: {report.water_level_check_time ?? "—"})<br />
-                  Tank notes: {report.water_tanks_notes ?? "—"}<br />
-                  Pump PSI: {pump} (time: {report.pump_psi_time ?? "—"})
-                </div>
-              </div>
-
-              <div className="rounded-lg border p-4">
-                <div className="text-sm font-medium">Generator — Visual</div>
-                <div className="mt-3 space-y-2">
-                  {gensVisual.map((g: any, idx: number) => (
-                    <div key={idx} className="rounded-md border p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="font-medium">{g.label}</div>
-                        {statusPill(g.status)}
-                      </div>
-                      {g.notes ? <div className="mt-1 text-xs text-muted-foreground">{g.notes}</div> : null}
+                <div className="font-medium">Faucets / Toilets / Drains</div>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {plumbingChecks.map((c) => (
+                    <div key={c.key} className="rounded border p-2">
+                      {c.label}: <span className="font-semibold">{report[c.key] === false ? "Issue" : report[c.key] === true ? "OK" : "—"}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="rounded-lg border p-4">
-                <div className="text-sm font-medium">Generator — Operational</div>
-                <div className="mt-3 space-y-2">
-                  {gensOperational.map((g: any, idx: number) => (
-                    <div key={idx} className="rounded-md border p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="font-medium">{g.label}</div>
-                        {statusPill(g.status)}
-                      </div>
-                      {g.notes ? <div className="mt-1 text-xs text-muted-foreground">{g.notes}</div> : null}
+                <div className="font-medium">Generator (all)</div>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {gens.map((g: any, idx: number) => (
+                    <div key={idx} className="rounded border p-2">
+                      <div className="text-xs text-muted-foreground">{g.category}</div>
+                      <div className="font-medium">{g.label}</div>
+                      <div className="text-sm font-semibold">{g.status}</div>
+                      {g.notes ? <div className="text-xs text-muted-foreground">{g.notes}</div> : null}
                     </div>
                   ))}
                 </div>
