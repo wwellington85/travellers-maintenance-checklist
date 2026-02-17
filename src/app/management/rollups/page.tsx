@@ -4,7 +4,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 
 function isoWeekKey(d: Date) {
-  // ISO week approx good enough for MVP: week starts Monday
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - dayNum);
@@ -21,7 +20,7 @@ function fmt(n: any) {
   if (n === null || n === undefined) return "—";
   const num = Number(n);
   if (Number.isNaN(num)) return String(n);
-  return num.toLocaleString();
+  return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 export default async function RollupsPage() {
@@ -29,7 +28,10 @@ export default async function RollupsPage() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  // Pull last 365 deltas
+  const { data: rates } = await supabase.from("v_current_utility_rates").select("name, unit_label, rate_jmd");
+  const electricRate = Number((rates || []).find((r: any) => r.name === "electric")?.rate_jmd ?? 0);
+  const waterRate = Number((rates || []).find((r: any) => r.name === "water")?.rate_jmd ?? 0);
+
   const { data: rows, error } = await supabase
     .from("v_report_deltas")
     .select("report_date, water_delta, electric_delta")
@@ -47,11 +49,20 @@ export default async function RollupsPage() {
   }
 
   const data = (rows || []).map((r: any) => ({
-    ...r,
+    report_date: r.report_date,
     d: new Date(r.report_date + "T00:00:00"),
-    water_delta: r.water_delta ?? 0,
-    electric_delta: r.electric_delta ?? 0,
+    water_delta: Number(r.water_delta ?? 0),
+    electric_delta: Number(r.electric_delta ?? 0),
   }));
+
+  // Daily spikes (top 10 by combined estimated cost)
+  const daily = data
+    .map((r) => ({
+      ...r,
+      cost_jmd: r.water_delta * waterRate + r.electric_delta * electricRate,
+    }))
+    .sort((a, b) => b.cost_jmd - a.cost_jmd)
+    .slice(0, 10);
 
   const weekly = new Map<string, { water: number; electric: number; days: number }>();
   const monthly = new Map<string, { water: number; electric: number; days: number }>();
@@ -61,27 +72,35 @@ export default async function RollupsPage() {
     const mk = monthKey(r.d);
 
     const w = weekly.get(wk) || { water: 0, electric: 0, days: 0 };
-    w.water += Number(r.water_delta) || 0;
-    w.electric += Number(r.electric_delta) || 0;
+    w.water += r.water_delta;
+    w.electric += r.electric_delta;
     w.days += 1;
     weekly.set(wk, w);
 
     const m = monthly.get(mk) || { water: 0, electric: 0, days: 0 };
-    m.water += Number(r.water_delta) || 0;
-    m.electric += Number(r.electric_delta) || 0;
+    m.water += r.water_delta;
+    m.electric += r.electric_delta;
     m.days += 1;
     monthly.set(mk, m);
   }
 
-  const weeklyRows = Array.from(weekly.entries())
-    .map(([k, v]) => ({ k, ...v }))
-    .sort((a, b) => (a.k < b.k ? 1 : -1))
-    .slice(0, 12);
+  const weeklyAll = Array.from(weekly.entries()).map(([k, v]) => ({
+    k,
+    ...v,
+    cost_jmd: v.water * waterRate + v.electric * electricRate,
+  }));
 
-  const monthlyRows = Array.from(monthly.entries())
-    .map(([k, v]) => ({ k, ...v }))
-    .sort((a, b) => (a.k < b.k ? 1 : -1))
-    .slice(0, 12);
+  const monthlyAll = Array.from(monthly.entries()).map(([k, v]) => ({
+    k,
+    ...v,
+    cost_jmd: v.water * waterRate + v.electric * electricRate,
+  }));
+
+  const weeklyRows = weeklyAll.sort((a, b) => (a.k < b.k ? 1 : -1)).slice(0, 12);
+  const monthlyRows = monthlyAll.sort((a, b) => (a.k < b.k ? 1 : -1)).slice(0, 12);
+
+  const topWeeklySpikes = [...weeklyAll].sort((a, b) => b.cost_jmd - a.cost_jmd).slice(0, 3);
+  const topMonthlySpikes = [...monthlyAll].sort((a, b) => b.cost_jmd - a.cost_jmd).slice(0, 3);
 
   return (
     <main className="min-h-screen p-6">
@@ -90,7 +109,10 @@ export default async function RollupsPage() {
           <div>
             <h1 className="text-2xl font-semibold">Usage Rollups</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Weekly and monthly totals (from report deltas).
+              Weekly + monthly totals. Cost estimates use your current rates.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Rates: Electric JMD {fmt(electricRate)} per kWh • Water JMD {fmt(waterRate)} per unit
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -102,6 +124,54 @@ export default async function RollupsPage() {
         </header>
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">Top spikes</h2>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border p-4">
+              <div className="text-sm font-medium">Top 3 weeks</div>
+              <ul className="mt-2 space-y-2 text-sm">
+                {topWeeklySpikes.map((r) => (
+                  <li key={r.k} className="rounded border p-2">
+                    <div className="font-medium">{r.k}</div>
+                    <div className="text-muted-foreground text-xs">
+                      Water: {fmt(r.water)} • Electric: {fmt(r.electric)} • Cost: {fmt(r.cost_jmd)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <div className="text-sm font-medium">Top 3 months</div>
+              <ul className="mt-2 space-y-2 text-sm">
+                {topMonthlySpikes.map((r) => (
+                  <li key={r.k} className="rounded border p-2">
+                    <div className="font-medium">{r.k}</div>
+                    <div className="text-muted-foreground text-xs">
+                      Water: {fmt(r.water)} • Electric: {fmt(r.electric)} • Cost: {fmt(r.cost_jmd)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <div className="text-sm font-medium">Top 10 days</div>
+              <ul className="mt-2 space-y-2 text-sm">
+                {daily.map((r) => (
+                  <li key={r.report_date} className="rounded border p-2">
+                    <div className="font-medium">{r.report_date}</div>
+                    <div className="text-muted-foreground text-xs">
+                      Water Δ: {fmt(r.water_delta)} • Electric Δ: {fmt(r.electric_delta)} • Cost: {fmt(r.cost_jmd)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Last 12 weeks</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -111,6 +181,7 @@ export default async function RollupsPage() {
                   <th className="py-2 pr-4">Days</th>
                   <th className="py-2 pr-4">Water total</th>
                   <th className="py-2 pr-4">Electric total</th>
+                  <th className="py-2 pr-4">Est. cost (JMD)</th>
                   <th className="py-2 pr-0">Avg/day (water / electric)</th>
                 </tr>
               </thead>
@@ -121,6 +192,7 @@ export default async function RollupsPage() {
                     <td className="py-2 pr-4">{r.days}</td>
                     <td className="py-2 pr-4">{fmt(r.water)}</td>
                     <td className="py-2 pr-4">{fmt(r.electric)}</td>
+                    <td className="py-2 pr-4">{fmt(r.cost_jmd)}</td>
                     <td className="py-2 pr-0">
                       {fmt(r.days ? r.water / r.days : 0)} / {fmt(r.days ? r.electric / r.days : 0)}
                     </td>
@@ -141,6 +213,7 @@ export default async function RollupsPage() {
                   <th className="py-2 pr-4">Days</th>
                   <th className="py-2 pr-4">Water total</th>
                   <th className="py-2 pr-4">Electric total</th>
+                  <th className="py-2 pr-4">Est. cost (JMD)</th>
                   <th className="py-2 pr-0">Avg/day (water / electric)</th>
                 </tr>
               </thead>
@@ -151,6 +224,7 @@ export default async function RollupsPage() {
                     <td className="py-2 pr-4">{r.days}</td>
                     <td className="py-2 pr-4">{fmt(r.water)}</td>
                     <td className="py-2 pr-4">{fmt(r.electric)}</td>
+                    <td className="py-2 pr-4">{fmt(r.cost_jmd)}</td>
                     <td className="py-2 pr-0">
                       {fmt(r.days ? r.water / r.days : 0)} / {fmt(r.days ? r.electric / r.days : 0)}
                     </td>

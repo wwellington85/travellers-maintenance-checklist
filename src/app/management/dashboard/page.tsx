@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import DeltasChart from "./DeltasChart";
+import ReadingsChart from "./ReadingsChart";
 import DashboardSummary from "./DashboardSummary";
 
 function fmt(n: any) {
@@ -12,15 +13,38 @@ function fmt(n: any) {
   return num.toLocaleString();
 }
 
+function warnPill(text: string) {
+  return (
+    <span className="inline-flex items-center rounded-full border px-2 py-1 text-xs">
+      {text}
+    </span>
+  );
+}
+
 export default async function ManagementDashboardPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: deltas, error: deltasErr } = await supabase
+  // For the *cards*, we want the latest row even if it's null (shows that the delta isn't computable yet)
+  const { data: deltasAll, error: deltasErr } = await supabase
     .from("v_report_deltas")
     .select("report_date, water_delta, electric_delta")
+    .order("report_date", { ascending: false })
+    .limit(60);
+
+  // For the *chart*, we want only real deltas so the line always makes sense
+  const { data: deltasNonNull } = await supabase
+    .from("v_report_deltas_nonnull")
+    .select("report_date, water_delta, electric_delta")
+    .order("report_date", { ascending: false })
+    .limit(60);
+
+  // Raw readings chart (always chartable)
+  const { data: readings } = await supabase
+    .from("v_report_readings")
+    .select("report_date, water_reading, electric_reading")
     .order("report_date", { ascending: false })
     .limit(60);
 
@@ -32,7 +56,17 @@ export default async function ManagementDashboardPage() {
     .order("report_date", { ascending: false })
     .limit(60);
 
-  const latest = deltas?.[0];
+  const latest = deltasAll?.[0];
+
+  // helpful: latest computable delta (for warning logic)
+  const latestDelta = deltasNonNull?.[0];
+
+  const negativeWarnings: string[] = [];
+  if (latestDelta?.water_delta !== null && latestDelta?.water_delta < 0)
+    negativeWarnings.push("Negative water delta (possible reading error/rollover)");
+  if (latestDelta?.electric_delta !== null && latestDelta?.electric_delta < 0)
+    negativeWarnings.push("Negative electric delta (possible reading error/rollover)");
+
   const exceptionCount =
     exceptions?.filter(
       (e) =>
@@ -44,8 +78,9 @@ export default async function ManagementDashboardPage() {
         e.pump_psi_out_of_range
     ).length ?? 0;
 
-  // Chart expects ascending dates
-  const chartData = [...(deltas || [])].reverse();
+  // Charts expect ascending dates
+  const deltaChartData = [...(deltasNonNull || [])].reverse();
+  const readingsChartData = [...(readings || [])].reverse();
 
   return (
     <main className="min-h-screen p-6">
@@ -54,7 +89,7 @@ export default async function ManagementDashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold">Maintenance Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Water and electric usage deltas over time.
+              Readings + usage deltas for water and electricity.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -71,12 +106,22 @@ export default async function ManagementDashboardPage() {
           </div>
         </header>
 
-        {/* NEW: Management overview panel */}
         <DashboardSummary />
 
         {deltasErr || exErr ? (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-red-600">{deltasErr?.message || exErr?.message}</p>
+          </section>
+        ) : null}
+
+        {negativeWarnings.length ? (
+          <section className="rounded-xl border bg-white p-4 shadow-sm flex flex-wrap gap-2">
+            {negativeWarnings.map((w) => (
+              <span key={w}>{warnPill(w)}</span>
+            ))}
+            <span className="text-xs text-muted-foreground">
+              Tip: Negative deltas usually mean the reading decreased vs yesterday.
+            </span>
           </section>
         ) : null}
 
@@ -101,12 +146,22 @@ export default async function ManagementDashboardPage() {
         </section>
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Deltas chart (last 60)</h2>
+          <h2 className="text-lg font-semibold">Meter readings chart (last 60)</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Water delta and electric delta by report date.
+            Raw meter readings (always available even when deltas are null).
           </p>
           <div className="mt-4">
-            <DeltasChart data={chartData as any} />
+            <ReadingsChart data={readingsChartData as any} />
+          </div>
+        </section>
+
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">Usage deltas chart (computable days)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Shows only days where a delta could be computed (non-null).
+          </p>
+          <div className="mt-4">
+            <DeltasChart data={deltaChartData as any} />
           </div>
         </section>
       </div>
