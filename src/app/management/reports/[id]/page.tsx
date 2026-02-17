@@ -18,7 +18,6 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const reportId = params.id;
 
   if (!UUID_RE.test(reportId)) {
     return (

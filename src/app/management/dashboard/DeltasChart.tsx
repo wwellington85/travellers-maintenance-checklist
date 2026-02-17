@@ -16,7 +16,7 @@ export default function DeltasChart({
   data: { report_date: string; water_delta: number | null; electric_delta: number | null }[];
 }) {
   return (
-    <div className="h-[320px] w-full">
+    <div className="w-full min-w-0" style={{ height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
