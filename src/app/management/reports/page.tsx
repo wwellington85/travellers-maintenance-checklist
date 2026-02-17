@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
@@ -10,9 +11,9 @@ export default async function ManagementReportsPage() {
 
   const { data: rows, error } = await supabase
     .from("maintenance_reports")
-    .select("id, report_date, submitted_at, submitted_by, water_meter_reading, electric_meter_reading, issues_summary")
+    .select("id, report_date, submitted_at, water_meter_reading, electric_meter_reading, issues_summary")
     .order("report_date", { ascending: false })
-    .limit(100);
+    .limit(200);
 
   return (
     <main className="min-h-screen p-6">
@@ -21,16 +22,19 @@ export default async function ManagementReportsPage() {
           <div>
             <h1 className="text-2xl font-semibold">All Reports</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Latest 100 nightly submissions.
+              Click a report to view the full submission.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
-            </a>
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/exceptions">
+            </Link>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/exceptions">
               Exceptions
-            </a>
+            </Link>
+            <form action="/management/reports/export" method="post">
+              <button className="rounded-lg border px-3 py-2 text-sm">Export CSV</button>
+            </form>
             <SignOutButton />
           </div>
         </header>
@@ -48,7 +52,7 @@ export default async function ManagementReportsPage() {
                     <th className="py-2 pr-4">Water</th>
                     <th className="py-2 pr-4">Electric</th>
                     <th className="py-2 pr-4">Issues</th>
-                    <th className="py-2 pr-0">ID</th>
+                    <th className="py-2 pr-0">Open</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -63,7 +67,11 @@ export default async function ManagementReportsPage() {
                           {r.issues_summary || "—"}
                         </div>
                       </td>
-                      <td className="py-2 pr-0 font-mono text-xs">{r.id}</td>
+                      <td className="py-2 pr-0">
+                        <Link className="underline" href={`/management/reports/${r.id}`}>
+                          View
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
