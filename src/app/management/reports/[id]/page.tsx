@@ -12,12 +12,17 @@ function yesNo(v: any) {
   return "—";
 }
 
-export default async function ReportDetailPage({ params }: { params: { id: string } }) {
+export default async function ReportDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
+  const { id: reportId } = await params;
 
   if (!UUID_RE.test(reportId)) {
     return (
@@ -36,9 +41,6 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
           <div className="rounded-xl border bg-white p-6 shadow-sm">
             <p className="text-sm text-red-600">
               Invalid report id: <span className="font-mono">{reportId}</span>
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              This usually happens if a report row has a missing id or a bad link.
             </p>
           </div>
         </div>
@@ -75,7 +77,12 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
         <div className="mx-auto max-w-4xl space-y-6">
           <header className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Report</h1>
-            <SignOutButton />
+            <div className="flex items-center gap-3">
+              <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
+                Back
+              </Link>
+              <SignOutButton />
+            </div>
           </header>
           <div className="rounded-xl border bg-white p-6 shadow-sm text-sm text-red-600">
             {repErr.message}
@@ -121,80 +128,6 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
         </section>
 
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Gas levels</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-lg border p-3">Kitchen tank 1: <span className="font-semibold">{report.kitchen_tank_1 ?? "—"}</span></div>
-            <div className="rounded-lg border p-3">Kitchen tank 2: <span className="font-semibold">{report.kitchen_tank_2 ?? "—"}</span></div>
-            <div className="rounded-lg border p-3">Laundry tank 1: <span className="font-semibold">{report.laundry_tank_1 ?? "—"}</span></div>
-            <div className="rounded-lg border p-3">Laundry tank 2: <span className="font-semibold">{report.laundry_tank_2 ?? "—"}</span></div>
-            <div className="rounded-lg border p-3">Spare tank 1: <span className="font-semibold">{report.spare_tank_1 ?? "—"}</span></div>
-            <div className="rounded-lg border p-3">Spare tank 2: <span className="font-semibold">{report.spare_tank_2 ?? "—"}</span></div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Water heaters & softwater</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-lg border p-3">
-              Water heater temp: <span className="font-semibold">{report.water_heater_temp ?? "—"}</span>
-              <div className="text-xs text-muted-foreground">Time: {report.water_heater_temp_time}</div>
-            </div>
-            <div className="rounded-lg border p-3">
-              Softwater tank 1: <span className="font-semibold">{report.softwater_tank_1 ?? "—"}</span><br />
-              Softwater tank 2: <span className="font-semibold">{report.softwater_tank_2 ?? "—"}</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Water tanks</h2>
-          <div className="text-sm space-y-2">
-            <div>Status: <span className="font-semibold">{report.water_tanks_status ?? "—"}</span></div>
-            <div>Time checked: <span className="font-semibold">{report.water_level_check_time ?? "—"}</span></div>
-            <div>Notes: <span className="font-semibold">{report.water_tanks_notes ?? "—"}</span></div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Pump</h2>
-          <div className="text-sm">
-            PSI: <span className="font-semibold">{report.pump_psi ?? "—"}</span> • Time: <span className="font-semibold">{report.pump_psi_time ?? "—"}</span>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Lights</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-lg border p-3">Deluxe: <span className="font-semibold">{yesNo(report.lights_deluxe_ok)}</span></div>
-            <div className="rounded-lg border p-3">Superior: <span className="font-semibold">{yesNo(report.lights_superior_ok)}</span></div>
-            <div className="rounded-lg border p-3">Standard: <span className="font-semibold">{yesNo(report.lights_standard_ok)}</span></div>
-            <div className="rounded-lg border p-3">Garden: <span className="font-semibold">{yesNo(report.lights_garden_ok)}</span></div>
-            <div className="rounded-lg border p-3">Pool Deck: <span className="font-semibold">{yesNo(report.lights_pooldeck_ok)}</span></div>
-            <div className="rounded-lg border p-3">Restaurant: <span className="font-semibold">{yesNo(report.lights_restaurant_ok)}</span></div>
-            <div className="rounded-lg border p-3">Restaurant Deck: <span className="font-semibold">{yesNo(report.lights_restaurant_deck_ok)}</span></div>
-          </div>
-          <div className="text-sm">
-            Issues/material needed: <span className="font-semibold">{report.lights_issues_notes ?? "—"}</span>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Plumbing checks</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-lg border p-3">Restaurant Male: <span className="font-semibold">{yesNo(report.plumbing_restaurant_male_ok)}</span></div>
-            <div className="rounded-lg border p-3">Restaurant Female: <span className="font-semibold">{yesNo(report.plumbing_restaurant_female_ok)}</span></div>
-            <div className="rounded-lg border p-3">Scuba shower: <span className="font-semibold">{yesNo(report.plumbing_scuba_shower_ok)}</span></div>
-            <div className="rounded-lg border p-3">Gym Footwash: <span className="font-semibold">{yesNo(report.plumbing_gym_footwash_ok)}</span></div>
-            <div className="rounded-lg border p-3">Pool Shower: <span className="font-semibold">{yesNo(report.plumbing_pool_shower_ok)}</span></div>
-            <div className="rounded-lg border p-3">Family Room: <span className="font-semibold">{yesNo(report.plumbing_family_room_bathroom_ok)}</span></div>
-            <div className="rounded-lg border p-3">Laundry Female: <span className="font-semibold">{yesNo(report.plumbing_laundry_female_bathroom_ok)}</span></div>
-            <div className="rounded-lg border p-3">Laundry Male: <span className="font-semibold">{yesNo(report.plumbing_laundry_male_bathroom_ok)}</span></div>
-            <div className="rounded-lg border p-3">Lobby Male: <span className="font-semibold">{yesNo(report.plumbing_lobby_male_bathroom_ok)}</span></div>
-            <div className="rounded-lg border p-3">Lobby Female: <span className="font-semibold">{yesNo(report.plumbing_lobby_female_bathroom_ok)}</span></div>
-          </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">Generator checklist</h2>
           {genErr ? (
             <p className="text-sm text-red-600">{genErr.message}</p>
@@ -218,6 +151,17 @@ export default async function ReportDetailPage({ params }: { params: { id: strin
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold">Issues / actions taken</h2>
           <p className="text-sm">{report.issues_summary ?? "—"}</p>
+        </section>
+
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <details>
+            <summary className="cursor-pointer text-sm text-muted-foreground">
+              Show full raw report fields
+            </summary>
+            <pre className="mt-3 whitespace-pre-wrap text-xs">
+{JSON.stringify(report, null, 2)}
+            </pre>
+          </details>
         </section>
       </div>
     </main>
