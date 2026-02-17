@@ -3,17 +3,42 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 
+function fmt(n: any) {
+  if (n === null || n === undefined) return "—";
+  const num = Number(n);
+  if (Number.isNaN(num)) return String(n);
+  return num.toLocaleString();
+}
+
 export default async function ManagementReportsPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: rows, error } = await supabase
+  const { data: reports, error } = await supabase
     .from("maintenance_reports")
-    .select("id, report_date, submitted_at, water_meter_reading, electric_meter_reading, issues_summary")
+    .select("id, report_date, submitted_at, issues_summary")
     .order("report_date", { ascending: false })
-    .limit(200);
+    .limit(120);
+
+  const dates = (reports || []).map((r: any) => r.report_date);
+
+  const { data: deltas } = await supabase
+    .from("v_report_deltas")
+    .select("report_date, water_delta, electric_delta")
+    .in("report_date", dates);
+
+  const { data: exceptions } = await supabase
+    .from("v_report_exceptions")
+    .select("report_date, exception_reasons")
+    .in("report_date", dates);
+
+  const deltasByDate = new Map<string, any>();
+  (deltas || []).forEach((d: any) => deltasByDate.set(d.report_date, d));
+
+  const exByDate = new Map<string, any>();
+  (exceptions || []).forEach((e: any) => exByDate.set(e.report_date, e));
 
   return (
     <main className="min-h-screen p-6">
@@ -22,7 +47,7 @@ export default async function ManagementReportsPage() {
           <div>
             <h1 className="text-2xl font-semibold">All Reports</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Click a report to view the full submission.
+              Deltas + flags shown here so you only click what matters.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -42,34 +67,42 @@ export default async function ManagementReportsPage() {
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           {error ? (
             <p className="text-sm text-red-600">Error: {error.message}</p>
-          ) : rows && rows.length ? (
+          ) : reports && reports.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-gray-600">
                   <tr>
                     <th className="py-2 pr-4">Date</th>
                     <th className="py-2 pr-4">Submitted</th>
-                    <th className="py-2 pr-4">Water</th>
-                    <th className="py-2 pr-4">Electric</th>
-                    <th className="py-2 pr-4">Issues</th>
+                    <th className="py-2 pr-4">Water Δ</th>
+                    <th className="py-2 pr-4">Electric Δ</th>
+                    <th className="py-2 pr-4">Flags</th>
                     <th className="py-2 pr-0">Open</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r: any) => {
+                  {reports.map((r: any) => {
                     const rid = r?.id;
                     const canView = typeof rid === "string" && rid.length > 0;
+                    const d = deltasByDate.get(r.report_date);
+                    const ex = exByDate.get(r.report_date);
+                    const reasons: string[] = ex?.exception_reasons || [];
+                    const flagCount = reasons.length;
 
                     return (
                       <tr key={rid || `${r.report_date}-${r.submitted_at}`} className="border-t align-top">
                         <td className="py-2 pr-4">{r.report_date}</td>
                         <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
-                        <td className="py-2 pr-4">{r.water_meter_reading}</td>
-                        <td className="py-2 pr-4">{r.electric_meter_reading}</td>
+                        <td className="py-2 pr-4">{fmt(d?.water_delta)}</td>
+                        <td className="py-2 pr-4">{fmt(d?.electric_delta)}</td>
                         <td className="py-2 pr-4">
-                          <div className="max-w-[420px] truncate text-muted-foreground">
-                            {r.issues_summary || "—"}
-                          </div>
+                          {flagCount ? (
+                            <span className="rounded-full border px-2 py-1 text-xs">
+                              {flagCount} flag{flagCount === 1 ? "" : "s"}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="py-2 pr-0">
                           {canView ? (
