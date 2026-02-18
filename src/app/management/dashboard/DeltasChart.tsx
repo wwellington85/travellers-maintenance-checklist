@@ -28,12 +28,12 @@ export default function DeltasChart({
   }
 
   return (
-    <div className="w-full min-w-0" style={{ height: 360 }}>
+    <div className="h-full w-full min-w-0 overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="report_date" tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
+          <XAxis dataKey="report_date" tick={{ fontSize: 12 }} tickMargin={6} minTickGap={16} />
+          <YAxis tick={{ fontSize: 12 }} tickMargin={6} width={52} />
           <Tooltip />
           <Line
             type="monotone"

@@ -21,6 +21,13 @@ function todayISODate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function currentTimeHHMM() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 export default function MaintenanceReportForm({
   generatorKeys,
 }: {
@@ -39,10 +46,10 @@ export default function MaintenanceReportForm({
   const [reportDate, setReportDate] = useState(todayISODate());
 
   const [waterMeterReading, setWaterMeterReading] = useState("");
-  const [waterMeterTime, setWaterMeterTime] = useState("");
+  const [waterMeterTime, setWaterMeterTime] = useState(() => currentTimeHHMM());
 
   const [electricMeterReading, setElectricMeterReading] = useState("");
-  const [electricMeterTime, setElectricMeterTime] = useState("");
+  const [electricMeterTime, setElectricMeterTime] = useState(() => currentTimeHHMM());
 
   const [kitchenTank1, setKitchenTank1] = useState("");
   const [kitchenTank2, setKitchenTank2] = useState("");
@@ -52,7 +59,7 @@ export default function MaintenanceReportForm({
   const [spareTank2, setSpareTank2] = useState("");
 
   const [waterHeaterTemp, setWaterHeaterTemp] = useState("");
-  const [waterHeaterTempTime, setWaterHeaterTempTime] = useState("");
+  const [waterHeaterTempTime, setWaterHeaterTempTime] = useState(() => currentTimeHHMM());
 
   const [softwater1, setSoftwater1] = useState<"hard" | "soft" | "">("");
   const [softwater2, setSoftwater2] = useState<"hard" | "soft" | "">("");
@@ -60,11 +67,11 @@ export default function MaintenanceReportForm({
   const [waterTanksStatus, setWaterTanksStatus] = useState<
     "all_full" | "some_full" | "almost_empty" | ""
   >("");
-  const [waterLevelCheckTime, setWaterLevelCheckTime] = useState("");
+  const [waterLevelCheckTime, setWaterLevelCheckTime] = useState(() => currentTimeHHMM());
   const [waterTanksNotes, setWaterTanksNotes] = useState("");
 
   const [pumpPsi, setPumpPsi] = useState("");
-  const [pumpPsiTime, setPumpPsiTime] = useState("");
+  const [pumpPsiTime, setPumpPsiTime] = useState(() => currentTimeHHMM());
 
   const [lights, setLights] = useState({
     deluxe: true,
@@ -97,6 +104,16 @@ export default function MaintenanceReportForm({
 
   function setGenStatus(category: "visual" | "operational", item_key: string, status: GeneratorStatus) {
     setGeneratorStatuses((prev) => ({ ...prev, [`${category}:${item_key}`]: status }));
+  }
+
+  function clearGenStatus(category: "visual" | "operational", item_key: string) {
+    const stateKey = `${category}:${item_key}`;
+    setGeneratorStatuses((prev) => {
+      if (!prev[stateKey]) return prev;
+      const next = { ...prev };
+      delete next[stateKey];
+      return next;
+    });
   }
 
   function allGeneratorKeysHaveStatus() {
@@ -247,9 +264,9 @@ export default function MaintenanceReportForm({
               setErrorMsg(null);
               // Keep date as-is; reset most fields for next entry
               setWaterMeterReading("");
-              setWaterMeterTime("");
+              setWaterMeterTime(currentTimeHHMM());
               setElectricMeterReading("");
-              setElectricMeterTime("");
+              setElectricMeterTime(currentTimeHHMM());
               setKitchenTank1("");
               setKitchenTank2("");
               setLaundryTank1("");
@@ -257,14 +274,14 @@ export default function MaintenanceReportForm({
               setSpareTank1("");
               setSpareTank2("");
               setWaterHeaterTemp("");
-              setWaterHeaterTempTime("");
+              setWaterHeaterTempTime(currentTimeHHMM());
               setSoftwater1("");
               setSoftwater2("");
               setWaterTanksStatus("");
-              setWaterLevelCheckTime("");
+              setWaterLevelCheckTime(currentTimeHHMM());
               setWaterTanksNotes("");
               setPumpPsi("");
-              setPumpPsiTime("");
+              setPumpPsiTime(currentTimeHHMM());
               setLights({
                 deluxe: true,
                 superior: true,
@@ -436,7 +453,7 @@ export default function MaintenanceReportForm({
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Time recorded *</label>
+            <label className="text-sm font-medium">Time recorded (water heater / softwater) *</label>
             <input
               type="time"
               required
@@ -617,7 +634,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Generator checks */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
+      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-6 sm:p-6">
         <h2 className="text-lg font-semibold">Generator</h2>
 
         <div className="space-y-4">
@@ -626,6 +643,7 @@ export default function MaintenanceReportForm({
             keys={visualKeys}
             statuses={generatorStatuses}
             onSet={setGenStatus}
+            onClear={clearGenStatus}
           />
         </div>
 
@@ -635,6 +653,7 @@ export default function MaintenanceReportForm({
             keys={operationalKeys}
             statuses={generatorStatuses}
             onSet={setGenStatus}
+            onClear={clearGenStatus}
           />
         </div>
       </section>
@@ -672,10 +691,12 @@ function GeneratorChecklistTable({
   keys,
   statuses,
   onSet,
+  onClear,
 }: {
   keys: GeneratorKey[];
   statuses: Record<string, GeneratorStatus>;
   onSet: (category: "visual" | "operational", item_key: string, status: GeneratorStatus) => void;
+  onClear: (category: "visual" | "operational", item_key: string) => void;
 }) {
   if (!keys.length) {
     return (
@@ -686,39 +707,84 @@ function GeneratorChecklistTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[560px] text-sm">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="p-3 text-left font-medium">Item</th>
-            <th className="p-3 text-center font-medium">Completed</th>
-            <th className="p-3 text-center font-medium">Not Completed</th>
-            <th className="p-3 text-center font-medium">N/A</th>
-          </tr>
-        </thead>
-        <tbody>
-          {keys.map((k) => {
-            const key = `${k.category}:${k.item_key}`;
-            const v = statuses[key];
+    <div className="rounded-lg border">
+      <div className="divide-y md:hidden">
+        {keys.map((k) => {
+          const key = `${k.category}:${k.item_key}`;
+          const v = statuses[key];
 
-            return (
-              <tr key={key} className="border-t">
-                <td className="p-3">{k.label}</td>
-                {(["completed", "not_completed", "na"] as GeneratorStatus[]).map((opt) => (
-                  <td key={opt} className="p-3 text-center">
-                    <input
-                      type="radio"
-                      name={key}
-                      checked={v === opt}
-                      onChange={() => onSet(k.category, k.item_key, opt)}
-                    />
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          return (
+            <div key={key} className="space-y-2.5 p-3">
+              <div className="text-sm font-medium leading-snug">{k.label}</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(["completed", "not_completed", "na"] as GeneratorStatus[]).map((opt) => {
+                  const checked = v === opt;
+                  const label = opt === "completed" ? "Done" : opt === "not_completed" ? "Issue" : "N/A";
+                  return (
+                    <button
+                      type="button"
+                      key={opt}
+                      className={`min-h-11 rounded-lg border px-2 py-2 text-center text-xs font-semibold leading-tight transition-colors ${
+                        checked
+                          ? "border-black bg-black text-white"
+                          : "border-gray-300 bg-white text-gray-700"
+                      }`}
+                      onClick={() =>
+                        checked
+                          ? onClear(k.category, k.item_key)
+                          : onSet(k.category, k.item_key, opt)
+                      }
+                      aria-pressed={checked}
+                      aria-label={`${k.label} ${label}`}
+                    >
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden md:block">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left font-medium">Item</th>
+              <th className="p-3 text-center font-medium">Completed</th>
+              <th className="p-3 text-center font-medium">Not Completed</th>
+              <th className="p-3 text-center font-medium">N/A</th>
+            </tr>
+          </thead>
+          <tbody>
+            {keys.map((k) => {
+              const key = `${k.category}:${k.item_key}`;
+              const v = statuses[key];
+
+              return (
+                <tr key={key} className="border-t">
+                  <td className="p-3 align-top">{k.label}</td>
+                  {(["completed", "not_completed", "na"] as GeneratorStatus[]).map((opt) => (
+                    <td key={opt} className="p-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={v === opt}
+                        onChange={(e) =>
+                          e.target.checked
+                            ? onSet(k.category, k.item_key, opt)
+                            : onClear(k.category, k.item_key)
+                        }
+                        aria-label={`${k.label} ${opt}`}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
