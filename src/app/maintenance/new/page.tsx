@@ -18,8 +18,14 @@ export default async function MaintenanceNewPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen overflow-x-hidden px-4 py-6 sm:p-6">
-        <div className="mx-auto max-w-2xl space-y-6">
+      <main
+        className="min-h-screen overflow-x-hidden py-6 sm:p-6"
+        style={{
+          paddingLeft: "max(1rem, env(safe-area-inset-left))",
+          paddingRight: "max(1rem, env(safe-area-inset-right))",
+        }}
+      >
+        <div className="mx-auto max-w-2xl max-w-full space-y-6">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-2xl font-semibold">Night Maintenance Report</h1>
             <div className="shrink-0 self-start">
@@ -38,8 +44,14 @@ export default async function MaintenanceNewPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden px-4 py-6 sm:p-6">
-      <div className="mx-auto max-w-2xl space-y-6">
+    <main
+      className="min-h-screen overflow-x-hidden py-6 sm:p-6"
+      style={{
+        paddingLeft: "max(1rem, env(safe-area-inset-left))",
+        paddingRight: "max(1rem, env(safe-area-inset-right))",
+      }}
+    >
+      <div className="mx-auto max-w-2xl max-w-full space-y-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold">Night Maintenance Report</h1>
