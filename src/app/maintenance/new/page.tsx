@@ -21,8 +21,8 @@ export default async function MaintenanceNewPage() {
       <main
         className="min-h-screen overflow-x-hidden py-6 sm:p-6"
         style={{
-          paddingLeft: "max(1rem, env(safe-area-inset-left))",
-          paddingRight: "max(1rem, env(safe-area-inset-right))",
+          paddingLeft: "max(1.25rem, calc(env(safe-area-inset-left) + 0.75rem))",
+          paddingRight: "max(1.25rem, calc(env(safe-area-inset-right) + 0.75rem))",
         }}
       >
         <div className="mx-auto max-w-2xl max-w-full space-y-6">
@@ -47,8 +47,8 @@ export default async function MaintenanceNewPage() {
     <main
       className="min-h-screen overflow-x-hidden py-6 sm:p-6"
       style={{
-        paddingLeft: "max(1rem, env(safe-area-inset-left))",
-        paddingRight: "max(1rem, env(safe-area-inset-right))",
+        paddingLeft: "max(1.25rem, calc(env(safe-area-inset-left) + 0.75rem))",
+        paddingRight: "max(1.25rem, calc(env(safe-area-inset-right) + 0.75rem))",
       }}
     >
       <div className="mx-auto max-w-2xl max-w-full space-y-6">
