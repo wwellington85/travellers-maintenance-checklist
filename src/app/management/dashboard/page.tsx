@@ -60,14 +60,27 @@ export default async function ManagementDashboardPage() {
 
   // helpful: latest computable delta (for warning logic)
   const latestDelta = deltasNonNull?.[0];
+  const latestFollowup = latestDelta?.report_date
+    ? await (async () => {
+        const { data: latestReport } = await supabase
+          .from("maintenance_reports")
+          .select("id")
+          .eq("report_date", latestDelta.report_date)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-  const { data: latestFollowup } = latestDelta?.report_id
-    ? await supabase
-        .from("maintenance_followups")
-        .select("reading_anomaly_type")
-        .eq("report_id", latestDelta.report_id)
-        .maybeSingle()
-    : { data: null };
+        if (!latestReport?.id) return null;
+
+        const { data: lf } = await supabase
+          .from("maintenance_followups")
+          .select("reading_anomaly_type")
+          .eq("report_id", latestReport.id)
+          .maybeSingle();
+
+        return lf;
+      })()
+    : null;
 
   const anomalyType = latestFollowup?.reading_anomaly_type || "none";
 
@@ -160,7 +173,7 @@ export default async function ManagementDashboardPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Raw meter readings (always available even when deltas are null).
           </p>
-          <div className="mt-4">
+          <div className="mt-4 h-72 w-full">
             <ReadingsChart data={readingsChartData as any} />
           </div>
         </section>
@@ -170,7 +183,7 @@ export default async function ManagementDashboardPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Shows only days where a delta could be computed (non-null).
           </p>
-          <div className="mt-4">
+          <div className="mt-4 h-72 w-full">
             <DeltasChart data={deltaChartData as any} />
           </div>
         </section>
