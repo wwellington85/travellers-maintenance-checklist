@@ -331,7 +331,7 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Basics</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[14rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Date of check *</label>
             <input
               type="date"
@@ -339,7 +339,6 @@ export default function MaintenanceReportForm({
               value={reportDate}
               onChange={(e) => setReportDate(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "14rem" }}
             />
           </div>
         </div>
@@ -362,14 +361,13 @@ export default function MaintenanceReportForm({
               placeholder="e.g. 12345"
             />
           </div>
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time checked (water)</label>
             <input
               type="time"
               value={waterMeterTime}
               onChange={(e) => setWaterMeterTime(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "12rem" }}
             />
           </div>
 
@@ -385,14 +383,13 @@ export default function MaintenanceReportForm({
               placeholder="e.g. 67890"
             />
           </div>
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time checked (electric)</label>
             <input
               type="time"
               value={electricMeterTime}
               onChange={(e) => setElectricMeterTime(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "12rem" }}
             />
           </div>
         </div>
@@ -455,7 +452,7 @@ export default function MaintenanceReportForm({
               placeholder="e.g. 120"
             />
           </div>
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time recorded (water heater / softwater) *</label>
             <input
               type="time"
@@ -463,7 +460,6 @@ export default function MaintenanceReportForm({
               value={waterHeaterTempTime}
               onChange={(e) => setWaterHeaterTempTime(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "12rem" }}
             />
           </div>
 
@@ -514,14 +510,13 @@ export default function MaintenanceReportForm({
             </select>
           </div>
 
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time checked</label>
             <input
               type="time"
               value={waterLevelCheckTime}
               onChange={(e) => setWaterLevelCheckTime(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "12rem" }}
             />
           </div>
 
@@ -555,14 +550,13 @@ export default function MaintenanceReportForm({
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             />
           </div>
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time checked</label>
             <input
               type="time"
               value={pumpPsiTime}
               onChange={(e) => setPumpPsiTime(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              style={{ maxWidth: "12rem" }}
             />
           </div>
         </div>
