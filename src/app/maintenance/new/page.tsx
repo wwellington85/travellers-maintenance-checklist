@@ -18,11 +18,13 @@ export default async function MaintenanceNewPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen overflow-x-hidden px-4 py-6 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
-          <header className="flex items-center justify-between">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-2xl font-semibold">Night Maintenance Report</h1>
-            <SignOutButton />
+            <div className="shrink-0 self-start">
+              <SignOutButton />
+            </div>
           </header>
 
           <div className="rounded-xl border bg-white p-6 shadow-sm">
@@ -36,16 +38,18 @@ export default async function MaintenanceNewPage() {
   }
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen overflow-x-hidden px-4 py-6 sm:p-6">
       <div className="mx-auto max-w-2xl space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold">Night Maintenance Report</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Submit the nightly readings and checks.
             </p>
           </div>
-          <SignOutButton />
+          <div className="shrink-0 self-start">
+            <SignOutButton />
+          </div>
         </header>
 
         <MaintenanceReportForm generatorKeys={(keys || []) as GeneratorKey[]} />

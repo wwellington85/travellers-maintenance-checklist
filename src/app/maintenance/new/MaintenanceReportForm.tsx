@@ -251,7 +251,7 @@ export default function MaintenanceReportForm({
 
   if (successId) {
     return (
-      <section className="rounded-xl border bg-white p-6 shadow-sm">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6">
         <h2 className="text-lg font-semibold">Submitted successfully</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Report ID: <span className="font-mono">{successId}</span>
@@ -319,7 +319,7 @@ export default function MaintenanceReportForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="min-w-0 space-y-6">
       {errorMsg ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {errorMsg}
@@ -327,7 +327,7 @@ export default function MaintenanceReportForm({
       ) : null}
 
       {/* Basics */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Basics</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -345,7 +345,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Water & Electric */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Meters</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -396,7 +396,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Gas */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Gas levels</h2>
         <p className="text-sm text-muted-foreground">
           Enter numeric values (use a consistent unit like %).
@@ -437,7 +437,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Water heaters + softwater */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Water heaters & Softwater</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -492,7 +492,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Water tanks */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Water tanks</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -536,7 +536,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Pump */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Pump</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -563,7 +563,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Lights */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Lights</h2>
         <p className="text-sm text-muted-foreground">
           Toggle off if lights are NOT working properly.
@@ -602,7 +602,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Plumbing */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Faucets / Toilets / Drains</h2>
         <p className="text-sm text-muted-foreground">
           Leave checked if everything is OK. Uncheck if there is a leak/blockage/running.
@@ -634,7 +634,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Generator checks */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-6 sm:p-6">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden space-y-6 sm:p-6">
         <h2 className="text-lg font-semibold">Generator</h2>
 
         <div className="space-y-4">
@@ -659,7 +659,7 @@ export default function MaintenanceReportForm({
       </section>
 
       {/* Summary */}
-      <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
+      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Issues & actions taken</h2>
         <textarea
           value={issuesSummary}
