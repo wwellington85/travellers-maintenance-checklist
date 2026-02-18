@@ -74,27 +74,27 @@ export default function MaintenanceReportForm({
   const [pumpPsiTime, setPumpPsiTime] = useState(() => currentTimeHHMM());
 
   const [lights, setLights] = useState({
-    deluxe: true,
-    superior: true,
-    standard: true,
-    garden: true,
-    pooldeck: true,
-    restaurant: true,
-    restaurantDeck: true,
+    deluxe: false,
+    superior: false,
+    standard: false,
+    garden: false,
+    pooldeck: false,
+    restaurant: false,
+    restaurantDeck: false,
   });
   const [lightsIssuesNotes, setLightsIssuesNotes] = useState("");
 
   const [plumbing, setPlumbing] = useState({
-    restaurantMale: true,
-    restaurantFemale: true,
-    scubaShower: true,
-    gymFootwash: true,
-    poolShower: true,
-    familyRoomBathroom: true,
-    laundryFemaleBathroom: true,
-    laundryMaleBathroom: true,
-    lobbyMaleBathroom: true,
-    lobbyFemaleBathroom: true,
+    restaurantMale: false,
+    restaurantFemale: false,
+    scubaShower: false,
+    gymFootwash: false,
+    poolShower: false,
+    familyRoomBathroom: false,
+    laundryFemaleBathroom: false,
+    laundryMaleBathroom: false,
+    lobbyMaleBathroom: false,
+    lobbyFemaleBathroom: false,
   });
 
   const [issuesSummary, setIssuesSummary] = useState("");
@@ -283,26 +283,26 @@ export default function MaintenanceReportForm({
               setPumpPsi("");
               setPumpPsiTime(currentTimeHHMM());
               setLights({
-                deluxe: true,
-                superior: true,
-                standard: true,
-                garden: true,
-                pooldeck: true,
-                restaurant: true,
-                restaurantDeck: true,
+                deluxe: false,
+                superior: false,
+                standard: false,
+                garden: false,
+                pooldeck: false,
+                restaurant: false,
+                restaurantDeck: false,
               });
               setLightsIssuesNotes("");
               setPlumbing({
-                restaurantMale: true,
-                restaurantFemale: true,
-                scubaShower: true,
-                gymFootwash: true,
-                poolShower: true,
-                familyRoomBathroom: true,
-                laundryFemaleBathroom: true,
-                laundryMaleBathroom: true,
-                lobbyMaleBathroom: true,
-                lobbyFemaleBathroom: true,
+                restaurantMale: false,
+                restaurantFemale: false,
+                scubaShower: false,
+                gymFootwash: false,
+                poolShower: false,
+                familyRoomBathroom: false,
+                laundryFemaleBathroom: false,
+                laundryMaleBathroom: false,
+                lobbyMaleBathroom: false,
+                lobbyFemaleBathroom: false,
               });
               setIssuesSummary("");
               setGeneratorStatuses({});
@@ -566,7 +566,7 @@ export default function MaintenanceReportForm({
       <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Lights</h2>
         <p className="text-sm text-muted-foreground">
-          Toggle off if lights are NOT working properly.
+          Start unchecked. Check each light only after you verify it is working properly.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -605,7 +605,7 @@ export default function MaintenanceReportForm({
       <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Faucets / Toilets / Drains</h2>
         <p className="text-sm text-muted-foreground">
-          Leave checked if everything is OK. Uncheck if there is a leak/blockage/running.
+          Start unchecked. Check each point only after you verify it is OK.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
