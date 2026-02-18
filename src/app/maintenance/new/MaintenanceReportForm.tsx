@@ -331,14 +331,15 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Basics</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Date of check *</label>
             <input
               type="date"
               required
               value={reportDate}
               onChange={(e) => setReportDate(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "14rem" }}
             />
           </div>
         </div>
@@ -349,7 +350,7 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Meters</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Water meter reading *</label>
             <input
               type="number"
@@ -357,21 +358,22 @@ export default function MaintenanceReportForm({
               required
               value={waterMeterReading}
               onChange={(e) => setWaterMeterReading(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
               placeholder="e.g. 12345"
             />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Time checked (water)</label>
             <input
               type="time"
               value={waterMeterTime}
               onChange={(e) => setWaterMeterTime(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "12rem" }}
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Electric meter reading *</label>
             <input
               type="number"
@@ -379,17 +381,18 @@ export default function MaintenanceReportForm({
               required
               value={electricMeterReading}
               onChange={(e) => setElectricMeterReading(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
               placeholder="e.g. 67890"
             />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Time checked (electric)</label>
             <input
               type="time"
               value={electricMeterTime}
               onChange={(e) => setElectricMeterTime(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "12rem" }}
             />
           </div>
         </div>
@@ -403,35 +406,35 @@ export default function MaintenanceReportForm({
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Kitchen tank 1</label>
             <input type="number" inputMode="decimal" value={kitchenTank1} onChange={(e)=>setKitchenTank1(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Kitchen tank 2</label>
             <input type="number" inputMode="decimal" value={kitchenTank2} onChange={(e)=>setKitchenTank2(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Laundry tank 1</label>
             <input type="number" inputMode="decimal" value={laundryTank1} onChange={(e)=>setLaundryTank1(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Laundry tank 2</label>
             <input type="number" inputMode="decimal" value={laundryTank2} onChange={(e)=>setLaundryTank2(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Spare tank 1</label>
             <input type="number" inputMode="decimal" value={spareTank1} onChange={(e)=>setSpareTank1(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Spare tank 2</label>
             <input type="number" inputMode="decimal" value={spareTank2} onChange={(e)=>setSpareTank2(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
         </div>
       </section>
@@ -441,34 +444,35 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Water heaters & Softwater</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Water heater temperature</label>
             <input
               type="number"
               inputMode="decimal"
               value={waterHeaterTemp}
               onChange={(e) => setWaterHeaterTemp(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
               placeholder="e.g. 120"
             />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Time recorded (water heater / softwater) *</label>
             <input
               type="time"
               required
               value={waterHeaterTempTime}
               onChange={(e) => setWaterHeaterTempTime(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "12rem" }}
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Softwater tank 1</label>
             <select
               value={softwater1}
               onChange={(e) => setSoftwater1(e.target.value as any)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             >
               <option value="">Select…</option>
               <option value="soft">Soft</option>
@@ -476,12 +480,12 @@ export default function MaintenanceReportForm({
             </select>
           </div>
 
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Softwater tank 2</label>
             <select
               value={softwater2}
               onChange={(e) => setSoftwater2(e.target.value as any)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             >
               <option value="">Select…</option>
               <option value="soft">Soft</option>
@@ -496,12 +500,12 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Water tanks</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Tank levels</label>
             <select
               value={waterTanksStatus}
               onChange={(e) => setWaterTanksStatus(e.target.value as any)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             >
               <option value="">Select…</option>
               <option value="all_full">All Full</option>
@@ -510,13 +514,14 @@ export default function MaintenanceReportForm({
             </select>
           </div>
 
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Time checked</label>
             <input
               type="time"
               value={waterLevelCheckTime}
               onChange={(e) => setWaterLevelCheckTime(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "12rem" }}
             />
           </div>
 
@@ -527,7 +532,7 @@ export default function MaintenanceReportForm({
             <textarea
               value={waterTanksNotes}
               onChange={(e) => setWaterTanksNotes(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
               rows={3}
               placeholder="e.g. Back tank low, rooftop tank half…"
             />
@@ -540,23 +545,24 @@ export default function MaintenanceReportForm({
         <h2 className="text-lg font-semibold">Pump</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Pump PSI</label>
             <input
               type="number"
               inputMode="decimal"
               value={pumpPsi}
               onChange={(e) => setPumpPsi(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Time checked</label>
             <input
               type="time"
               value={pumpPsiTime}
               onChange={(e) => setPumpPsiTime(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              style={{ maxWidth: "12rem" }}
             />
           </div>
         </div>
@@ -590,12 +596,12 @@ export default function MaintenanceReportForm({
           ))}
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <label className="text-sm font-medium">Issues / materials needed</label>
           <textarea
             value={lightsIssuesNotes}
             onChange={(e) => setLightsIssuesNotes(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+            className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
             rows={3}
           />
         </div>
@@ -664,7 +670,7 @@ export default function MaintenanceReportForm({
         <textarea
           value={issuesSummary}
           onChange={(e) => setIssuesSummary(e.target.value)}
-          className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+          className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
           rows={5}
           placeholder="Write any issues found, action taken, and materials needed..."
         />
