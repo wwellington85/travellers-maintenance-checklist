@@ -326,9 +326,9 @@ export default function MaintenanceReportForm({
         </div>
       ) : null}
 
-      {/* Basics */}
+      {/* Report details */}
       <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Basics</h2>
+        <h2 className="text-lg font-semibold">Report details</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="min-w-0 flex max-w-[14rem] flex-col gap-2 sm:max-w-full">
@@ -566,7 +566,7 @@ export default function MaintenanceReportForm({
       <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Lights</h2>
         <p className="text-sm text-muted-foreground">
-          Start unchecked. Check each light only after you verify it is working properly.
+          Check each box only after you verify lights are on and working.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -605,7 +605,7 @@ export default function MaintenanceReportForm({
       <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold">Faucets / Toilets / Drains</h2>
         <p className="text-sm text-muted-foreground">
-          Start unchecked. Check each point only after you verify it is OK.
+          Check each box only after you verify each faucet, toilet, and drain is in working order.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
