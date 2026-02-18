@@ -24,10 +24,9 @@ export default async function ReportDetailPage({
 }) {
   const supabase = await createSupabaseServerClient();
 
+  const { id: reportId } = await params;
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
-
-  const { id: reportId } = await params;
   if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
   const { data: report, error: repErr } = await supabase
@@ -194,7 +193,8 @@ export default async function ReportDetailPage({
         <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold">Follow-up (management)</h2>
 
-          <form action={`/management/reports//followup`} method="post" className="space-y-4">
+          <form action={`/management/reports/${reportId}/followup`} method="post" className="space-y-4">
+            <input type="hidden" name="report_id" value={reportId} />
   <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
     <div className="space-y-1">
       <div className="text-xs text-muted-foreground">Status</div>

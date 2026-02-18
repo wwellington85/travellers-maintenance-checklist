@@ -28,31 +28,43 @@ function parseOptionalNumber(v: FormDataEntryValue | null) {
   return n;
 }
 
-export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id: reportId } = await ctx.params;
+export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
+  const form = await req.formData();
+  const fallbackId = String(form.get("report_id") || "").trim();
 
-  const res = NextResponse.redirect(new URL(`/management/reports/${reportId}`, req.url), {
-    status: 303,
-  });
+  const p = await (ctx as any).params;
+  const reportId = p?.id || fallbackId;
 
-  const supabase = supabaseFromRequest(req, res);
+  console.log("[followup] POST", req.nextUrl.pathname, "params.id=", p?.id, "fallbackId=", fallbackId);
+
+  if (!reportId) {
+    return NextResponse.redirect(new URL("/management/reports?save=missing_id", req.url), { status: 303 });
+  }
+
+  const supabaseRes = NextResponse.redirect(new URL(`/management/reports/${reportId}?save=ok`, req.url), { status: 303 });
+  const supabase = supabaseFromRequest(req, supabaseRes);
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
     return NextResponse.redirect(new URL("/auth/login", req.url), { status: 303 });
   }
 
-  const { data: me } = await supabase
+  const { data: me, error: meErr } = await supabase
     .from("profiles")
     .select("role,is_active")
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
-    return NextResponse.redirect(new URL("/maintenance/new", req.url), { status: 303 });
+  if (meErr) {
+    return NextResponse.redirect(
+      new URL(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(meErr.message)}`, req.url),
+      { status: 303 }
+    );
   }
 
-  const form = await req.formData();
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
+    return NextResponse.redirect(new URL(`/management/reports/${reportId}?save=forbidden`, req.url), { status: 303 });
+  }
 
   const status = String(form.get("status") || "open");
   const assigned_to_raw = String(form.get("assigned_to") || "").trim();
@@ -66,7 +78,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   const assigned_to = assigned_to_raw.length ? assigned_to_raw : null;
 
-  await supabase.from("maintenance_followups").upsert({
+  const { error: upsertErr } = await supabase.from("maintenance_followups").upsert({
     report_id: reportId,
     status,
     assigned_to,
@@ -79,5 +91,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     updated_at: new Date().toISOString(),
   });
 
-  return res;
+  if (upsertErr) {
+    return NextResponse.redirect(
+      new URL(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(upsertErr.message)}`, req.url),
+      { status: 303 }
+    );
+  }
+
+  return supabaseRes;
 }
