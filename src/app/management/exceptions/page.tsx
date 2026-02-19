@@ -34,6 +34,9 @@ export default async function ManagementExceptionsPage() {
             <a className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
               Reports
             </a>
+            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
+              Staff
+            </a>
             <SignOutButton />
           </div>
         </header>

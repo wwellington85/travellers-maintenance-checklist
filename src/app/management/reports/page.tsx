@@ -64,6 +64,9 @@ export default async function ManagementReportsPage() {
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/exceptions">
               Exceptions
             </Link>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
+              Staff
+            </Link>
             <form action="/management/reports/export" method="post">
               <button className="rounded-lg border px-3 py-2 text-sm">Export CSV</button>
             </form>

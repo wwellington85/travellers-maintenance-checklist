@@ -119,6 +119,9 @@ export default async function RollupsPage() {
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
             </Link>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
+              Staff
+            </Link>
             <SignOutButton />
           </div>
         </header>
