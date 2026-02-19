@@ -29,8 +29,23 @@ function tempPassword() {
   return `Temp-${Math.random().toString(36).slice(2)}!A1`;
 }
 
+async function findUserByEmail(service: any, email: string) {
+  let page = 1;
+  const perPage = 200;
+  while (true) {
+    const { data, error } = await service.auth.admin.listUsers({ page, perPage });
+    if (error) return null;
+    const users = data?.users || [];
+    const found = users.find((u: any) => (u.email || "").toLowerCase() === email.toLowerCase());
+    if (found) return found;
+    if (users.length < perPage) return null;
+    page += 1;
+  }
+}
+
 export async function POST(req: NextRequest) {
-  const res = NextResponse.redirect(new URL("/management/staff", req.url), { status: 303 });
+  const redirectUrl = new URL("/management/staff", req.url);
+  const res = NextResponse.redirect(redirectUrl, { status: 303 });
   const supabase = supabaseFromRequest(req, res);
 
   const { data: userData } = await supabase.auth.getUser();
@@ -49,38 +64,63 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const fullName = String(form.get("full_name") || "").trim();
   const role = String(form.get("role") || "maintenance");
-  const emailRaw = String(form.get("email") || "").trim();
+  const emailRaw = String(form.get("email") || "").trim().toLowerCase();
 
-  if (!fullName || !["maintenance", "manager", "admin"].includes(role)) return res;
-  if (me.role !== "admin" && role === "admin") return res;
-
-  const email = emailRaw || makePlaceholderEmail(fullName);
+  if (!fullName || !["maintenance", "manager", "admin"].includes(role)) {
+    redirectUrl.searchParams.set("err", "invalid_input");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
+  if (me.role !== "admin" && role === "admin") {
+    redirectUrl.searchParams.set("err", "forbidden_role");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
 
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: existingUsers } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  const existing = (existingUsers?.users || []).find((u) => (u.email || "").toLowerCase() === email.toLowerCase());
+  const targetEmail = emailRaw || makePlaceholderEmail(fullName);
+  let userId: string | null = null;
 
-  let userId = existing?.id;
-  if (!userId) {
+  const existing = await findUserByEmail(service, targetEmail);
+  if (existing?.id) {
+    userId = existing.id;
+  } else if (emailRaw) {
+    const { data, error } = await service.auth.admin.inviteUserByEmail(targetEmail, {
+      data: { full_name: fullName },
+      redirectTo: `${req.nextUrl.origin}/auth/login`,
+    });
+    if (error || !data.user?.id) {
+      redirectUrl.searchParams.set("err", "invite_failed");
+      return NextResponse.redirect(redirectUrl, { status: 303 });
+    }
+    userId = data.user.id;
+  } else {
     const { data, error } = await service.auth.admin.createUser({
-      email,
+      email: targetEmail,
       password: tempPassword(),
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });
-    if (error || !data.user?.id) return res;
+    if (error || !data.user?.id) {
+      redirectUrl.searchParams.set("err", "create_failed");
+      return NextResponse.redirect(redirectUrl, { status: 303 });
+    }
     userId = data.user.id;
   }
 
-  await supabase.from("profiles").upsert({
+  const { error: upsertErr } = await supabase.from("profiles").upsert({
     id: userId,
     full_name: fullName,
     role,
     is_active: true,
   });
 
-  return res;
+  if (upsertErr) {
+    redirectUrl.searchParams.set("err", "profile_upsert_failed");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
+
+  redirectUrl.searchParams.set("ok", emailRaw ? "staff_invited" : "staff_created");
+  return NextResponse.redirect(redirectUrl, { status: 303 });
 }

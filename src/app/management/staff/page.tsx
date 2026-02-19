@@ -2,9 +2,55 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { createClient } from "@supabase/supabase-js";
 
-export default async function ManagementStaffPage() {
+function statusText(ok?: string, err?: string) {
+  if (ok === "staff_created") return { type: "ok", text: "Staff placeholder created." };
+  if (ok === "staff_invited") return { type: "ok", text: "Staff created and invite email sent." };
+  if (ok === "staff_updated") return { type: "ok", text: "Staff updated." };
+  if (ok === "invite_sent") return { type: "ok", text: "Password setup/reset email sent." };
+
+  if (err === "invalid_input") return { type: "err", text: "Please fill all required fields correctly." };
+  if (err === "forbidden_role") return { type: "err", text: "Only admins can assign admin role." };
+  if (err === "invite_failed") return { type: "err", text: "Could not send invite email." };
+  if (err === "create_failed") return { type: "err", text: "Could not create auth user." };
+  if (err === "profile_upsert_failed") return { type: "err", text: "Could not save profile." };
+  if (err === "profile_update_failed") return { type: "err", text: "Could not update profile." };
+  if (err === "email_update_failed") return { type: "err", text: "Could not update email for this user." };
+  if (err === "missing_real_email") return { type: "err", text: "Add a real email first, then send invite." };
+  if (err === "missing_id") return { type: "err", text: "Missing staff ID." };
+
+  return null;
+}
+
+async function listAuthUsersById() {
+  const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const byId = new Map<string, { email: string | null }>();
+  let page = 1;
+  const perPage = 200;
+
+  while (true) {
+    const { data, error } = await service.auth.admin.listUsers({ page, perPage });
+    if (error) break;
+    const users = data?.users || [];
+    users.forEach((u) => byId.set(u.id, { email: u.email || null }));
+    if (users.length < perPage) break;
+    page += 1;
+  }
+
+  return byId;
+}
+
+export default async function ManagementStaffPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | undefined>>;
+}) {
   const supabase = await createSupabaseServerClient();
+  const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
@@ -23,6 +69,10 @@ export default async function ManagementStaffPage() {
     .order("full_name", { ascending: true })
     .limit(500);
 
+  const authById = await listAuthUsersById();
+  const editId = sp?.edit || "";
+  const notice = statusText(sp?.ok, sp?.err);
+
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -30,7 +80,7 @@ export default async function ManagementStaffPage() {
           <div>
             <h1 className="text-2xl font-semibold">Staff Management</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create staff placeholders, update roles, and activate/deactivate accounts.
+              Add staff, edit details, and control access.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -43,6 +93,16 @@ export default async function ManagementStaffPage() {
             <SignOutButton />
           </div>
         </header>
+
+        {notice ? (
+          <section
+            className={`rounded-xl border p-4 text-sm ${
+              notice.type === "ok" ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            {notice.text}
+          </section>
+        ) : null}
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Add Staff</h2>
@@ -57,12 +117,12 @@ export default async function ManagementStaffPage() {
             <select name="role" defaultValue="maintenance" className="rounded border px-3 py-2 text-sm">
               <option value="maintenance">maintenance</option>
               <option value="manager">manager</option>
-              <option value="admin">admin</option>
+              {me.role === "admin" ? <option value="admin">admin</option> : null}
             </select>
             <button className="rounded border px-3 py-2 text-sm md:col-span-1">Create staff</button>
           </form>
           <p className="mt-2 text-xs text-muted-foreground">
-            If email is omitted, a placeholder <code>@travellers.local</code> email is generated.
+            If email is provided, an invite email is sent. If omitted, a placeholder email is used until updated.
           </p>
         </section>
 
@@ -75,6 +135,7 @@ export default async function ManagementStaffPage() {
                 <thead className="text-left text-gray-600">
                   <tr>
                     <th className="py-2 pr-4">Name</th>
+                    <th className="py-2 pr-4">Email</th>
                     <th className="py-2 pr-4">Role</th>
                     <th className="py-2 pr-4">Active</th>
                     <th className="py-2 pr-4">Created</th>
@@ -82,38 +143,99 @@ export default async function ManagementStaffPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u: any) => (
-                    <tr key={u.id} className="border-t align-top">
-                      <td className="py-2 pr-4">
-                        <div className="font-medium">{u.full_name}</div>
-                        <div className="font-mono text-xs text-muted-foreground">{u.id}</div>
-                      </td>
-                      <td className="py-2 pr-4">{u.role}</td>
-                      <td className="py-2 pr-4">{u.is_active ? "Yes" : "No"}</td>
-                      <td className="py-2 pr-4">{new Date(u.created_at).toLocaleString()}</td>
-                      <td className="py-2 pr-0">
-                        <form action="/management/staff/update" method="post" className="flex flex-wrap gap-2">
-                          <input type="hidden" name="id" value={u.id} />
-                          <input
-                            name="full_name"
-                            defaultValue={u.full_name || ""}
-                            className="rounded border px-2 py-1"
-                            placeholder="Full name"
-                          />
-                          <select name="role" defaultValue={u.role} className="rounded border px-2 py-1">
-                            <option value="maintenance">maintenance</option>
-                            <option value="manager">manager</option>
-                            <option value="admin">admin</option>
-                          </select>
-                          <select name="is_active" defaultValue={String(u.is_active)} className="rounded border px-2 py-1">
-                            <option value="true">active</option>
-                            <option value="false">inactive</option>
-                          </select>
-                          <button className="rounded border px-2 py-1">Save</button>
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
+                  {users.map((u: any) => {
+                    const rowEmail = authById.get(u.id)?.email || "";
+                    const isPlaceholderEmail = rowEmail.endsWith("@travellers.local");
+                    const isEditing = editId === u.id;
+
+                    return (
+                      <tr key={u.id} className="border-t align-top">
+                        {isEditing ? (
+                          <>
+                            <td className="py-2 pr-4">
+                              <input
+                                form={`row-${u.id}`}
+                                name="full_name"
+                                defaultValue={u.full_name || ""}
+                                className="w-full rounded border px-2 py-1"
+                                placeholder="Full name"
+                              />
+                            </td>
+                            <td className="py-2 pr-4">
+                              <input
+                                form={`row-${u.id}`}
+                                name="email"
+                                defaultValue={isPlaceholderEmail ? "" : rowEmail}
+                                className="w-full rounded border px-2 py-1"
+                                placeholder="Email"
+                              />
+                            </td>
+                            <td className="py-2 pr-4">
+                              <select form={`row-${u.id}`} name="role" defaultValue={u.role} className="rounded border px-2 py-1">
+                                <option value="maintenance">maintenance</option>
+                                <option value="manager">manager</option>
+                                {me.role === "admin" ? <option value="admin">admin</option> : null}
+                              </select>
+                            </td>
+                            <td className="py-2 pr-4">
+                              <select form={`row-${u.id}`} name="is_active" defaultValue={String(u.is_active)} className="rounded border px-2 py-1">
+                                <option value="true">active</option>
+                                <option value="false">inactive</option>
+                              </select>
+                            </td>
+                            <td className="py-2 pr-4">{new Date(u.created_at).toLocaleString()}</td>
+                            <td className="py-2 pr-0">
+                              <div className="flex flex-wrap gap-2">
+                                <form id={`row-${u.id}`} action="/management/staff/update" method="post" className="flex gap-2">
+                                  <input type="hidden" name="id" value={u.id} />
+                                  <button className="rounded border px-2 py-1">Save</button>
+                                  <button name="send_invite" value="true" className="rounded border px-2 py-1">
+                                    Save + Send invite
+                                  </button>
+                                </form>
+                                <Link className="rounded border px-2 py-1" href="/management/staff">
+                                  Cancel
+                                </Link>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-2 pr-4">
+                              <div className="font-medium">{u.full_name}</div>
+                            </td>
+                            <td className="py-2 pr-4">
+                              {rowEmail ? (
+                                isPlaceholderEmail ? (
+                                  <span className="text-xs text-muted-foreground">placeholder email</span>
+                                ) : (
+                                  rowEmail
+                                )
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="py-2 pr-4">{u.role}</td>
+                            <td className="py-2 pr-4">{u.is_active ? "Yes" : "No"}</td>
+                            <td className="py-2 pr-4">{new Date(u.created_at).toLocaleString()}</td>
+                            <td className="py-2 pr-0">
+                              <div className="flex flex-wrap gap-2">
+                                <Link className="rounded border px-2 py-1" href={`/management/staff?edit=${u.id}`}>
+                                  Edit
+                                </Link>
+                                {!isPlaceholderEmail && rowEmail ? (
+                                  <form action="/management/staff/send-invite" method="post">
+                                    <input type="hidden" name="id" value={u.id} />
+                                    <button className="rounded border px-2 py-1">Send invite</button>
+                                  </form>
+                                ) : null}
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -125,4 +247,3 @@ export default async function ManagementStaffPage() {
     </main>
   );
 }
-
