@@ -125,6 +125,19 @@ function parseStrictNumber(v) {
   return Number.isNaN(n) ? null : n;
 }
 
+function parseMeterReading(v, kind) {
+  const n = parseStrictNumber(v);
+  if (n == null) return null;
+  if (kind === 'electric' && n >= 1000000) {
+    const digits = String(Math.trunc(Math.abs(n)));
+    if (digits.length >= 5) {
+      const tail5 = Number(digits.slice(-5));
+      if (!Number.isNaN(tail5) && tail5 >= 1000 && tail5 <= 99999) return tail5;
+    }
+  }
+  return n;
+}
+
 function parseCsvList(v) {
   const s = String(v || '').trim();
   if (!s) return [];
@@ -295,8 +308,8 @@ async function run() {
     const r = dataRows[idx];
     const rowNum = idx + 2;
     const reportDate = parseIsoDate(getVal(r, h.report_date)) || parseIsoDate(getVal(r, h.timestamp));
-    const waterReading = parseStrictNumber(getVal(r, h.water_meter));
-    const electricReading = parseStrictNumber(getVal(r, h.electric_meter));
+    const waterReading = parseMeterReading(getVal(r, h.water_meter), 'water');
+    const electricReading = parseMeterReading(getVal(r, h.electric_meter), 'electric');
 
     if (!reportDate) {
       skipped.push({ rowNum, reason: 'missing report_date' });

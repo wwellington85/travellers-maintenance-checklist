@@ -17,12 +17,22 @@ function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   });
 }
 
-function makePlaceholderEmail(fullName: string) {
-  const slug = fullName
+function toSlug(v: string) {
+  return (
+    v
     .toLowerCase()
+    .trim()
     .replace(/[^a-z0-9]+/g, ".")
-    .replace(/^\.+|\.+$/g, "") || "staff";
-  return `${slug}.${Date.now()}@travellers.local`;
+    .replace(/^\.+|\.+$/g, "") || "staff"
+  );
+}
+
+function makeUsernameEmail(username: string) {
+  return `${toSlug(username)}@travellers.local`;
+}
+
+function makePlaceholderEmail(fullName: string) {
+  return `${toSlug(fullName)}.${Date.now()}@travellers.local`;
 }
 
 function tempPassword() {
@@ -65,9 +75,15 @@ export async function POST(req: NextRequest) {
   const fullName = String(form.get("full_name") || "").trim();
   const role = String(form.get("role") || "maintenance");
   const emailRaw = String(form.get("email") || "").trim().toLowerCase();
+  const usernameRaw = String(form.get("username") || "").trim();
+  const passwordRaw = String(form.get("password") || "");
 
   if (!fullName || !["maintenance", "manager", "admin"].includes(role)) {
     redirectUrl.searchParams.set("err", "invalid_input");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
+  if (passwordRaw && passwordRaw.length < 8) {
+    redirectUrl.searchParams.set("err", "weak_password");
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
   if (me.role !== "admin" && role === "admin") {
@@ -79,13 +95,35 @@ export async function POST(req: NextRequest) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const targetEmail = emailRaw || makePlaceholderEmail(fullName);
+  const wantsEmailInvite = !!emailRaw && (role === "manager" || role === "admin") && !passwordRaw;
+  const targetEmail = wantsEmailInvite
+    ? emailRaw
+    : emailRaw
+      ? emailRaw
+      : usernameRaw
+        ? makeUsernameEmail(usernameRaw)
+        : makePlaceholderEmail(fullName);
   let userId: string | null = null;
+
+  if (!wantsEmailInvite && role === "maintenance" && (!usernameRaw || !passwordRaw || passwordRaw.length < 8)) {
+    redirectUrl.searchParams.set("err", "maintenance_creds_required");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
 
   const existing = await findUserByEmail(service, targetEmail);
   if (existing?.id) {
+    if (!wantsEmailInvite && passwordRaw) {
+      const { error: pwErr } = await service.auth.admin.updateUserById(existing.id, {
+        password: passwordRaw,
+        user_metadata: { full_name: fullName },
+      });
+      if (pwErr) {
+        redirectUrl.searchParams.set("err", "create_failed");
+        return NextResponse.redirect(redirectUrl, { status: 303 });
+      }
+    }
     userId = existing.id;
-  } else if (emailRaw) {
+  } else if (wantsEmailInvite) {
     const { data, error } = await service.auth.admin.inviteUserByEmail(targetEmail, {
       data: { full_name: fullName },
       redirectTo: `${req.nextUrl.origin}/auth/login`,
@@ -98,7 +136,7 @@ export async function POST(req: NextRequest) {
   } else {
     const { data, error } = await service.auth.admin.createUser({
       email: targetEmail,
-      password: tempPassword(),
+      password: passwordRaw || tempPassword(),
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });

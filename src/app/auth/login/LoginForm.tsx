@@ -10,17 +10,30 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const searchParams = useSearchParams();
 
   const redirect =
-    searchParams.get("redirect") || redirectTo || "/maintenance/new";
+    searchParams.get("redirect") || redirectTo || "/management/dashboard";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  function usernameToEmail(v: string) {
+    const slug =
+      v
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, ".")
+        .replace(/^\.+|\.+$/g, "") || "staff";
+    return `${slug}@travellers.local`;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
+
+    const raw = identifier.trim();
+    const email = raw.includes("@") ? raw.toLowerCase() : usernameToEmail(raw);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -47,16 +60,16 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       ) : null}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Email</label>
+        <label className="text-sm font-medium">Username or email</label>
         <input
-          type="email"
-          inputMode="email"
-          autoComplete="email"
+          type="text"
+          inputMode="text"
+          autoComplete="username"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
           className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-          placeholder="name@travellersbeachresort.com"
+          placeholder="vincent.gray or name@travellersbeachresort.com"
         />
       </div>
 

@@ -24,6 +24,20 @@ async function sendReset(service: any, email: string, origin: string) {
   return !error;
 }
 
+function toSlug(v: string) {
+  return (
+    v
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, ".")
+      .replace(/^\.+|\.+$/g, "") || "staff"
+  );
+}
+
+function makeUsernameEmail(username: string) {
+  return `${toSlug(username)}@travellers.local`;
+}
+
 export async function POST(req: NextRequest) {
   const redirectUrl = new URL("/management/staff", req.url);
   const res = NextResponse.redirect(redirectUrl, { status: 303 });
@@ -48,10 +62,16 @@ export async function POST(req: NextRequest) {
   const is_active = String(form.get("is_active") || "");
   const full_name = String(form.get("full_name") || "").trim();
   const email = String(form.get("email") || "").trim().toLowerCase();
+  const username = String(form.get("username") || "").trim();
+  const password = String(form.get("password") || "");
   const sendInvite = String(form.get("send_invite") || "") === "true";
 
   if (!id || !["maintenance", "manager", "admin"].includes(role) || !["true", "false"].includes(is_active)) {
     redirectUrl.searchParams.set("err", "invalid_input");
+    return NextResponse.redirect(redirectUrl, { status: 303 });
+  }
+  if (password && password.length < 8) {
+    redirectUrl.searchParams.set("err", "weak_password");
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
   if (me.role !== "admin" && role === "admin") {
@@ -74,15 +94,19 @@ export async function POST(req: NextRequest) {
   });
 
   let effectiveEmail = email;
-  if (email) {
+  const usernameEmail = username ? makeUsernameEmail(username) : "";
+  const nextEmail = email || usernameEmail;
+
+  if (nextEmail) {
     const { error: userErr } = await service.auth.admin.updateUserById(id, {
-      email,
+      email: nextEmail,
       user_metadata: full_name ? { full_name } : undefined,
     });
     if (userErr) {
       redirectUrl.searchParams.set("err", "email_update_failed");
       return NextResponse.redirect(redirectUrl, { status: 303 });
     }
+    effectiveEmail = nextEmail;
   } else if (full_name) {
     await service.auth.admin.updateUserById(id, { user_metadata: { full_name } });
   }
@@ -90,6 +114,14 @@ export async function POST(req: NextRequest) {
   if (!effectiveEmail) {
     const { data: u } = await service.auth.admin.getUserById(id);
     effectiveEmail = (u?.user?.email || "").toLowerCase();
+  }
+
+  if (password) {
+    const { error: pwErr } = await service.auth.admin.updateUserById(id, { password });
+    if (pwErr) {
+      redirectUrl.searchParams.set("err", "password_update_failed");
+      return NextResponse.redirect(redirectUrl, { status: 303 });
+    }
   }
 
   if (sendInvite && effectiveEmail && !effectiveEmail.endsWith("@travellers.local")) {
