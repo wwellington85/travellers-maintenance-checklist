@@ -7,7 +7,22 @@ function fmt(n: any) {
   return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-export default async function DashboardSummary() {
+function inclusiveDateSpan(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00Z`).getTime();
+  const end = new Date(`${endDate}T00:00:00Z`).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  return Math.max(1, Math.floor((end - start) / dayMs) + 1);
+}
+
+export default async function DashboardSummary({
+  startDate,
+  endDate,
+  rangeLabel,
+}: {
+  startDate?: string;
+  endDate?: string;
+  rangeLabel?: string;
+}) {
   const supabase = await createSupabaseServerClient();
 
   // current rates
@@ -18,12 +33,18 @@ export default async function DashboardSummary() {
   const electricRate = Number(electric?.rate_jmd ?? 0);
   const waterRate = Number(water?.rate_jmd ?? 0);
 
-  // last 30 deltas
-  const { data: deltas } = await supabase
+  let deltasQ = supabase
     .from("v_report_deltas_effective")
     .select("report_date, water_delta, electric_delta")
-    .order("report_date", { ascending: false })
-    .limit(30);
+    .order("report_date", { ascending: false });
+
+  if (startDate) deltasQ = deltasQ.gte("report_date", startDate);
+  if (endDate) deltasQ = deltasQ.lte("report_date", endDate);
+
+  const spanDays = startDate && endDate ? inclusiveDateSpan(startDate, endDate) : 30;
+  const rowLimit = Math.min(Math.max(spanDays + 10, 120), 5000);
+
+  const { data: deltas } = await deltasQ.limit(rowLimit);
 
   const rows = (deltas || []).map((r: any) => ({
     report_date: r.report_date,
@@ -66,11 +87,14 @@ export default async function DashboardSummary() {
           Rates: Electric JMD {fmt(electricRate)} / {electric?.unit_label ?? "unit"} • Water JMD {fmt(waterRate)} /{" "}
           {water?.unit_label ?? "unit"}
         </p>
+        {rangeLabel ? (
+          <p className="mt-1 text-xs text-muted-foreground">Summary window: {rangeLabel}</p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="rounded-lg border p-4">
-          <div className="text-xs text-muted-foreground">Last 7 days</div>
+          <div className="text-xs text-muted-foreground">{rangeLabel ? "Latest 7 in range" : "Last 7 days"}</div>
           <div className="mt-2 text-sm">Water total</div>
           <div className="text-2xl font-semibold">{fmt(w7)}</div>
           <div className="mt-2 text-sm">Electric total</div>
@@ -80,7 +104,7 @@ export default async function DashboardSummary() {
         </div>
 
         <div className="rounded-lg border p-4">
-          <div className="text-xs text-muted-foreground">Last 30 days</div>
+          <div className="text-xs text-muted-foreground">{rangeLabel ? "Range totals" : "Last 30 days"}</div>
           <div className="mt-2 text-sm">Water total</div>
           <div className="text-2xl font-semibold">{fmt(w30)}</div>
           <div className="mt-2 text-sm">Electric total</div>

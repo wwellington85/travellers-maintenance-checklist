@@ -18,7 +18,7 @@ export default async function ManagementReportsPage() {
 
   const { data: reports, error } = await supabase
     .from("maintenance_reports")
-    .select("id, report_date, submitted_at, issues_summary")
+    .select("id, report_date, submitted_at, submitted_by, issues_summary")
     .order("report_date", { ascending: false })
     .limit(120);
 
@@ -39,6 +39,13 @@ export default async function ManagementReportsPage() {
 
   const exByDate = new Map<string, any>();
   (exceptions || []).forEach((e: any) => exByDate.set(e.report_date, e));
+
+  const submitterIds = [...new Set((reports || []).map((r: any) => r.submitted_by).filter(Boolean))];
+  const { data: submitters } = submitterIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", submitterIds)
+    : { data: [] as any[] };
+  const submitterById = new Map<string, string>();
+  (submitters || []).forEach((p: any) => submitterById.set(p.id, p.full_name || p.id));
 
   return (
     <main className="min-h-screen p-6">
@@ -74,6 +81,7 @@ export default async function ManagementReportsPage() {
                   <tr>
                     <th className="py-2 pr-4">Date</th>
                     <th className="py-2 pr-4">Submitted</th>
+                    <th className="py-2 pr-4">Submitted by</th>
                     <th className="py-2 pr-4">Water Δ</th>
                     <th className="py-2 pr-4">Electric Δ</th>
                     <th className="py-2 pr-4">Flags</th>
@@ -93,6 +101,11 @@ export default async function ManagementReportsPage() {
                       <tr key={rid || `${r.report_date}-${r.submitted_at}`} className="border-t align-top">
                         <td className="py-2 pr-4">{r.report_date}</td>
                         <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
+                        <td className="py-2 pr-4">
+                          {submitterById.get(r.submitted_by) || (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="py-2 pr-4">{fmt(d?.water_delta)}</td>
                         <td className="py-2 pr-4">{fmt(d?.electric_delta)}</td>
                         <td className="py-2 pr-4">

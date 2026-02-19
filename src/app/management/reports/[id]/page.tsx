@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import SaveStatusBanner from "@/components/SaveStatusBanner";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -19,12 +20,15 @@ function pill(text: string) {
 
 export default async function ReportDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+  searchParams,
+}: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | undefined>>; }) {
   const supabase = await createSupabaseServerClient();
 
   const { id: reportId } = await params;
+  
+  const sp = (searchParams ? await searchParams : {}) as any;
+  const save = sp?.save as string | undefined;
+  const msg = sp?.msg as string | undefined;
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
   if (!UUID_RE.test(reportId)) redirect("/management/reports");
@@ -38,6 +42,17 @@ export default async function ReportDetailPage({
   if (repErr || !report) redirect("/management/reports");
 
   const reportDate = report.report_date;
+
+  const submitterProfile = report.submitted_by
+    ? await (async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("id", report.submitted_by)
+          .maybeSingle();
+        return data;
+      })()
+    : null;
 
   const { data: deltaRow } = await supabase
     .from("v_report_deltas")
@@ -123,11 +138,17 @@ export default async function ReportDetailPage({
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex items-center justify-between">
+
+        {save ? <SaveStatusBanner save={save} msg={msg} /> : null}
+
+                <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Night Report</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {reportDate} • Submitted {new Date(report.submitted_at).toLocaleString()}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Submitted by: {submitterProfile?.full_name || report.submitted_by || "—"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground font-mono">{report.id}</p>
           </div>
