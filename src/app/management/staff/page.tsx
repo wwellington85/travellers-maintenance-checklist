@@ -56,12 +56,15 @@ export default async function ManagementStaffPage({
   searchParams?: Promise<Record<string, string | undefined>>;
 }) {
   const supabase = await createSupabaseServerClient();
+  const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: me } = await supabase
+  const { data: me } = await service
     .from("profiles")
     .select("role,is_active")
     .eq("id", userData.user.id)
@@ -69,7 +72,7 @@ export default async function ManagementStaffPage({
 
   if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/maintenance/new");
 
-  const { data: users, error } = await supabase
+  const { data: users, error } = await service
     .from("profiles")
     .select("id, full_name, role, is_active, created_at")
     .order("full_name", { ascending: true })
