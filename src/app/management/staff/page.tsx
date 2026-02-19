@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import AutoHideNotice from "@/components/AutoHideNotice";
 import { createClient } from "@supabase/supabase-js";
 import { withBasePath } from "@/lib/app-path";
 
@@ -99,15 +100,7 @@ export default async function ManagementStaffPage({
           </div>
         </header>
 
-        {notice ? (
-          <section
-            className={`rounded-xl border p-4 text-sm ${
-              notice.type === "ok" ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"
-            }`}
-          >
-            {notice.text}
-          </section>
-        ) : null}
+        {notice ? <AutoHideNotice type={notice.type as "ok" | "err"} text={notice.text} /> : null}
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Add Staff</h2>

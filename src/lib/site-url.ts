@@ -1,3 +1,5 @@
+import { APP_BASE_PATH } from "@/lib/app-path";
+
 export const DEFAULT_SITE_URL = "https://apps.tbresorts.com/maintenance";
 
 function normalizeBasePath(pathname: string) {
@@ -14,7 +16,8 @@ export function getCanonicalSiteUrl(fallbackOrigin?: string) {
 
   try {
     const url = new URL(raw);
-    return `${url.origin}${normalizeBasePath(url.pathname)}`;
+    const basePath = normalizeBasePath(url.pathname) || APP_BASE_PATH;
+    return `${url.origin}${basePath}`;
   } catch {
     return DEFAULT_SITE_URL;
   }
