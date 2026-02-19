@@ -5,6 +5,7 @@ import SignOutButton from "@/components/SignOutButton";
 import DeltasChart from "./DeltasChart";
 import ReadingsChart from "./ReadingsChart";
 import DashboardSummary from "./DashboardSummary";
+import { withBasePath } from "@/lib/app-path";
 
 function fmt(n: any) {
   if (n === null || n === undefined) return "—";
@@ -47,7 +48,7 @@ function dashboardHref(preset: string, start?: string, end?: string) {
   sp.set("preset", preset);
   if (start) sp.set("start", start);
   if (end) sp.set("end", end);
-  return `/management/dashboard?${sp.toString()}`;
+  return `${withBasePath("/management/dashboard")}?${sp.toString()}`;
 }
 
 function applyDateRange<T>(query: T, startDate: string, endDate: string) {
@@ -70,7 +71,7 @@ export default async function ManagementDashboardPage({
   const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const today = utcTodayISO();
   const presetRaw = (sp?.preset || "60").toLowerCase();
@@ -210,7 +211,7 @@ export default async function ManagementDashboardPage({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/rollups">
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/rollups")}>
               Rollups
             </a>
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">

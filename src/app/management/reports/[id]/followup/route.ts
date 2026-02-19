@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { withBasePath } from "@/lib/app-path";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -28,25 +29,24 @@ function parseOptionalNumber(v: FormDataEntryValue | null) {
   return n;
 }
 
-export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const form = await req.formData();
   const fallbackId = String(form.get("report_id") || "").trim();
 
   const p = await (ctx as any).params;
   const reportId = p?.id || fallbackId;
 
-  console.log("[followup] POST", req.nextUrl.pathname, "params.id=", p?.id, "fallbackId=", fallbackId);
 
   if (!reportId) {
-    return NextResponse.redirect(new URL("/management/reports?save=missing_id", req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath("/management/reports?save=missing_id"), req.url), { status: 303 });
   }
 
-  const supabaseRes = NextResponse.redirect(new URL(`/management/reports/${reportId}?save=ok`, req.url), { status: 303 });
+  const supabaseRes = NextResponse.redirect(new URL(withBasePath(`/management/reports/${reportId}?save=ok`), req.url), { status: 303 });
   const supabase = supabaseFromRequest(req, supabaseRes);
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
-    return NextResponse.redirect(new URL("/auth/login", req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath("/auth/login"), req.url), { status: 303 });
   }
 
   const { data: me, error: meErr } = await supabase
@@ -57,13 +57,13 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
 
   if (meErr) {
     return NextResponse.redirect(
-      new URL(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(meErr.message)}`, req.url),
+      new URL(withBasePath(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(meErr.message)}`), req.url),
       { status: 303 }
     );
   }
 
   if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
-    return NextResponse.redirect(new URL(`/management/reports/${reportId}?save=forbidden`, req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath(`/management/reports/${reportId}?save=forbidden`), req.url), { status: 303 });
   }
 
   const status = String(form.get("status") || "open");
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
 
   if (upsertErr) {
     return NextResponse.redirect(
-      new URL(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(upsertErr.message)}`, req.url),
+      new URL(withBasePath(`/management/reports/${reportId}?save=error&msg=${encodeURIComponent(upsertErr.message)}`), req.url),
       { status: 303 }
     );
   }

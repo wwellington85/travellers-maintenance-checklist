@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { withBasePath } from "@/lib/app-path";
 
 export async function POST(req: NextRequest) {
-  const res = NextResponse.redirect(new URL("/auth/login", req.url), {
+  const res = NextResponse.redirect(new URL(withBasePath("/auth/login"), req.url), {
     status: 303,
   });
 

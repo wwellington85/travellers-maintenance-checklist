@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { getAppUrl } from "@/lib/site-url";
+import { withBasePath } from "@/lib/app-path";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -55,12 +56,12 @@ async function findUserByEmail(service: any, email: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const redirectUrl = new URL("/management/staff", req.url);
+  const redirectUrl = new URL(withBasePath("/management/staff"), req.url);
   const res = NextResponse.redirect(redirectUrl, { status: 303 });
   const supabase = supabaseFromRequest(req, res);
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return NextResponse.redirect(new URL("/auth/login", req.url), { status: 303 });
+  if (!userData.user) return NextResponse.redirect(new URL(withBasePath("/auth/login"), req.url), { status: 303 });
 
   const { data: me } = await supabase
     .from("profiles")
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
-    return NextResponse.redirect(new URL("/maintenance/new", req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath("/maintenance/new"), req.url), { status: 303 });
   }
 
   const form = await req.formData();

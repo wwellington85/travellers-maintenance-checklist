@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import MaintenanceReportForm, { type GeneratorKey } from "./MaintenanceReportForm";
+import { withBasePath } from "@/lib/app-path";
 
 export default async function MaintenanceNewPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: keys, error } = await supabase
     .from("generator_item_keys")

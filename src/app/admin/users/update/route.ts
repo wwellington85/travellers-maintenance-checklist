@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { withBasePath } from "@/lib/app-path";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -21,11 +22,11 @@ function supabaseFromRequest(req: NextRequest, res: NextResponse) {
 }
 
 export async function POST(req: NextRequest) {
-  const res = NextResponse.redirect(new URL("/admin/users", req.url), { status: 303 });
+  const res = NextResponse.redirect(new URL(withBasePath("/admin/users"), req.url), { status: 303 });
   const supabase = supabaseFromRequest(req, res);
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return NextResponse.redirect(new URL("/auth/login", req.url), { status: 303 });
+  if (!userData.user) return NextResponse.redirect(new URL(withBasePath("/auth/login"), req.url), { status: 303 });
 
   const { data: me } = await supabase
     .from("profiles")
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!me?.is_active || me.role !== "admin") {
-    return NextResponse.redirect(new URL("/maintenance/new", req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath("/maintenance/new"), req.url), { status: 303 });
   }
 
   const form = await req.formData();

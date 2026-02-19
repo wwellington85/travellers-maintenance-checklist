@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { withBasePath } from "@/lib/app-path";
 
 function isoWeekKey(d: Date) {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -26,7 +27,7 @@ function fmt(n: any) {
 export default async function RollupsPage() {
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: rates } = await supabase.from("v_current_utility_rates").select("name, unit_label, rate_jmd");
   const electricRate = Number((rates || []).find((r: any) => r.name === "electric")?.rate_jmd ?? 0);

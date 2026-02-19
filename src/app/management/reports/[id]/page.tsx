@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import SaveStatusBanner from "@/components/SaveStatusBanner";
+import { withBasePath } from "@/lib/app-path";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -30,8 +31,8 @@ export default async function ReportDetailPage({
   const save = sp?.save as string | undefined;
   const msg = sp?.msg as string | undefined;
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
-  if (!UUID_RE.test(reportId)) redirect("/management/reports");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!UUID_RE.test(reportId)) redirect(withBasePath("/management/reports"));
 
   const { data: report, error: repErr } = await supabase
     .from("maintenance_reports")
@@ -39,7 +40,7 @@ export default async function ReportDetailPage({
     .eq("id", reportId)
     .single();
 
-  if (repErr || !report) redirect("/management/reports");
+  if (repErr || !report) redirect(withBasePath("/management/reports"));
 
   const reportDate = report.report_date;
 

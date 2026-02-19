@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { withBasePath } from "@/lib/app-path";
 
 function fmt(n: any) {
   if (n === null || n === undefined) return "—";
@@ -14,7 +15,7 @@ export default async function ManagementReportsPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: reports, error } = await supabase
     .from("maintenance_reports")
@@ -67,7 +68,7 @@ export default async function ManagementReportsPage() {
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
               Staff
             </Link>
-            <form action="/management/reports/export" method="post">
+            <form action={withBasePath("/management/reports/export")} method="post">
               <button className="rounded-lg border px-3 py-2 text-sm">Export CSV</button>
             </form>
             <SignOutButton />

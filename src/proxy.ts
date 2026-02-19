@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { withBasePath, withoutBasePath } from "@/lib/app-path";
 
 function createSupabaseProxyClient(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -29,17 +30,18 @@ export async function proxy(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = req.nextUrl.pathname;
+  const appPathname = withoutBasePath(pathname);
 
-  const isAuthRoute = pathname.startsWith("/auth");
-  const isMaintenanceRoute = pathname.startsWith("/maintenance");
-  const isManagementRoute = pathname.startsWith("/management");
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAuthRoute = appPathname.startsWith("/auth");
+  const isMaintenanceRoute = appPathname.startsWith("/maintenance");
+  const isManagementRoute = appPathname.startsWith("/management");
+  const isAdminRoute = appPathname.startsWith("/admin");
 
   // If not logged in, protect app routes
   if (!user && (isMaintenanceRoute || isManagementRoute || isAdminRoute)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("redirect", pathname);
+    url.pathname = withBasePath("/auth/login");
+    url.searchParams.set("redirect", appPathname);
     return NextResponse.redirect(url);
   }
 
@@ -63,28 +65,28 @@ export async function proxy(req: NextRequest) {
 
     if (!p?.is_active) {
       const url = req.nextUrl.clone();
-      url.pathname = "/auth/login";
+      url.pathname = withBasePath("/auth/login");
       return NextResponse.redirect(url);
     }
 
     if (isAdminRoute && p.role !== "admin") {
       const url = req.nextUrl.clone();
-      url.pathname = "/maintenance/new";
+      url.pathname = withBasePath("/maintenance/new");
       return NextResponse.redirect(url);
     }
 
     if (isManagementRoute && !["manager", "admin"].includes(p.role)) {
       const url = req.nextUrl.clone();
-      url.pathname = "/maintenance/new";
+      url.pathname = withBasePath("/maintenance/new");
       return NextResponse.redirect(url);
     }
   }
 
   // Logged in user visiting /auth routes -> route based on role
-  if (user && isAuthRoute && pathname !== "/auth/logout") {
+  if (user && isAuthRoute && appPathname !== "/auth/logout") {
     const p = await getProfile();
     const url = req.nextUrl.clone();
-    url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new";
+    url.pathname = withBasePath(p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new");
     return NextResponse.redirect(url);
   }
 

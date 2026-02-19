@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { withBasePath } from "@/lib/app-path";
 
 export default function ManagementIndex() {
-  redirect("/management/dashboard");
+  redirect(withBasePath("/management/dashboard"));
 }

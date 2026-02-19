@@ -2,12 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { withBasePath } from "@/lib/app-path";
 
 export default async function AdminUsersPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: me } = await supabase
     .from("profiles")
@@ -15,7 +16,7 @@ export default async function AdminUsersPage() {
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || me.role !== "admin") redirect("/maintenance/new");
+  if (!me?.is_active || me.role !== "admin") redirect(withBasePath("/maintenance/new"));
 
   const { data: users, error } = await supabase
     .from("profiles")
@@ -67,7 +68,7 @@ export default async function AdminUsersPage() {
                       <td className="py-2 pr-4">{u.is_active ? "Yes" : "No"}</td>
                       <td className="py-2 pr-4">{new Date(u.created_at).toLocaleString()}</td>
                       <td className="py-2 pr-0">
-                        <form action="/admin/users/update" method="post" className="flex flex-wrap gap-2">
+                        <form action={withBasePath("/admin/users/update")} method="post" className="flex flex-wrap gap-2">
                           <input type="hidden" name="id" value={u.id} />
                           <select name="role" defaultValue={u.role} className="rounded border px-2 py-1">
                             <option value="maintenance">maintenance</option>

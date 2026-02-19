@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import { createClient } from "@supabase/supabase-js";
+import { withBasePath } from "@/lib/app-path";
 
 function statusText(ok?: string, err?: string) {
   if (ok === "staff_created") return { type: "ok", text: "Staff account created." };
@@ -57,7 +58,7 @@ export default async function ManagementStaffPage({
   const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: me } = await supabase
     .from("profiles")
@@ -65,7 +66,7 @@ export default async function ManagementStaffPage({
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/maintenance/new");
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect(withBasePath("/maintenance/new"));
 
   const { data: users, error } = await supabase
     .from("profiles")
@@ -110,7 +111,7 @@ export default async function ManagementStaffPage({
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Add Staff</h2>
-          <form action="/management/staff/create" method="post" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+          <form action={withBasePath("/management/staff/create")} method="post" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
             <input
               name="full_name"
               required
@@ -216,7 +217,7 @@ export default async function ManagementStaffPage({
                             <td className="py-2 pr-4">{new Date(u.created_at).toLocaleString()}</td>
                             <td className="py-2 pr-0">
                               <div className="flex flex-wrap gap-2">
-                                <form id={`row-${u.id}`} action="/management/staff/update" method="post" className="flex gap-2">
+                                <form id={`row-${u.id}`} action={withBasePath("/management/staff/update")} method="post" className="flex gap-2">
                                   <input type="hidden" name="id" value={u.id} />
                                   <input
                                     name="password"
@@ -263,7 +264,7 @@ export default async function ManagementStaffPage({
                                   Edit
                                 </Link>
                                 {!isPlaceholderEmail && rowEmail ? (
-                                  <form action="/management/staff/send-invite" method="post">
+                                  <form action={withBasePath("/management/staff/send-invite")} method="post">
                                     <input type="hidden" name="id" value={u.id} />
                                     <button className="rounded border px-2 py-1">Send invite</button>
                                   </form>

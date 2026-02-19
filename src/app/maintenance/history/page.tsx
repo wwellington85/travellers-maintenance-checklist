@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { withBasePath } from "@/lib/app-path";
 
 export default async function MaintenanceHistoryPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const userId = userData.user.id;
 
@@ -28,7 +29,7 @@ export default async function MaintenanceHistoryPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/maintenance/new">
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/maintenance/new")}>
               New report
             </a>
             <SignOutButton />

@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { withBasePath } from "@/lib/app-path";
 
 export default async function ManagementExceptionsPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth/login");
+  if (!userData.user) redirect(withBasePath("/auth/login"));
 
   const { data: rows, error } = await supabase
     .from("v_report_exceptions")
@@ -28,13 +29,13 @@ export default async function ManagementExceptionsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/dashboard")}>
               Dashboard
             </a>
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/reports")}>
               Reports
             </a>
-            <a className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/staff")}>
               Staff
             </a>
             <SignOutButton />

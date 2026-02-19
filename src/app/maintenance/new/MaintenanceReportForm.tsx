@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { withBasePath } from "@/lib/app-path";
 
 export type GeneratorKey = {
   category: "visual" | "operational";
@@ -310,7 +311,7 @@ export default function MaintenanceReportForm({
           >
             Submit another
           </button>
-          <a className="rounded-lg border px-4 py-2" href="/maintenance/history">
+          <a className="rounded-lg border px-4 py-2" href={withBasePath("/maintenance/history")}>
             View my history
           </a>
         </div>
@@ -679,7 +680,7 @@ export default function MaintenanceReportForm({
           {isSubmitting ? "Submitting..." : "Submit report"}
         </button>
 
-        <a href="/maintenance/history" className="rounded-lg border px-4 py-2">
+        <a href={withBasePath("/maintenance/history")} className="rounded-lg border px-4 py-2">
           My history
         </a>
       </div>
