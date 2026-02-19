@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { getCanonicalSiteUrl } from "@/lib/site-url";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const siteUrl = getCanonicalSiteUrl(req.nextUrl.origin);
 
   const { data } = await service.auth.admin.getUserById(id);
   const email = (data?.user?.email || "").toLowerCase();
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await service.auth.resetPasswordForEmail(email, {
-    redirectTo: `${req.nextUrl.origin}/auth/login`,
+    redirectTo: `${siteUrl}/auth/login`,
   });
 
   redirectUrl.searchParams.set("ok", error ? "invite_failed" : "invite_sent");

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { getCanonicalSiteUrl } from "@/lib/site-url";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const siteUrl = getCanonicalSiteUrl(req.nextUrl.origin);
 
   const wantsEmailInvite = !!emailRaw && (role === "manager" || role === "admin") && !passwordRaw;
   const targetEmail = wantsEmailInvite
@@ -126,7 +128,7 @@ export async function POST(req: NextRequest) {
   } else if (wantsEmailInvite) {
     const { data, error } = await service.auth.admin.inviteUserByEmail(targetEmail, {
       data: { full_name: fullName },
-      redirectTo: `${req.nextUrl.origin}/auth/login`,
+      redirectTo: `${siteUrl}/auth/login`,
     });
     if (error || !data.user?.id) {
       redirectUrl.searchParams.set("err", "invite_failed");
