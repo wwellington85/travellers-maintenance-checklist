@@ -71,7 +71,7 @@ export default async function ManagementDashboardPage({
   const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const today = utcTodayISO();
   const presetRaw = (sp?.preset || "60").toLowerCase();

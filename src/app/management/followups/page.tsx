@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
-import { withBasePath } from "@/lib/app-path";
 
 function pill(text: string) {
   return <span className="inline-flex items-center rounded-full border px-2 py-1 text-xs">{text}</span>;
@@ -22,7 +21,7 @@ export default async function FollowupsPage({
 }) {
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const sp = (searchParams ? await searchParams : {}) as any;
   const status = (sp?.status || "open") as string; // open | in_progress | resolved | all

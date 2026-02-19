@@ -7,7 +7,7 @@ export default async function ManagementExceptionsPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const { data: rows, error } = await supabase
     .from("v_report_exceptions")

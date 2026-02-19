@@ -8,7 +8,7 @@ export default async function AdminUsersPage() {
   const supabase = await createSupabaseServerClient();
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const { data: me } = await supabase
     .from("profiles")
@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || me.role !== "admin") redirect(withBasePath("/maintenance/new"));
+  if (!me?.is_active || me.role !== "admin") redirect("/maintenance/new");
 
   const { data: users, error } = await supabase
     .from("profiles")

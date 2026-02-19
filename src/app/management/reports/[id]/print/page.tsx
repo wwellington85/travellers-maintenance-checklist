@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import PrintButton from "./PrintButton";
-import { withBasePath } from "@/lib/app-path";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -13,10 +12,10 @@ export default async function ReportPrintPage({
 }) {
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const { id: reportId } = await params;
-  if (!UUID_RE.test(reportId)) redirect(withBasePath("/management/reports"));
+  if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
   const { data: report } = await supabase
     .from("maintenance_reports")
@@ -24,7 +23,7 @@ export default async function ReportPrintPage({
     .eq("id", reportId)
     .single();
 
-  if (!report) redirect(withBasePath("/management/reports"));
+  if (!report) redirect("/management/reports");
 
   const { data: exRow } = await supabase
     .from("v_report_exceptions")

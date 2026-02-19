@@ -58,7 +58,7 @@ export default async function ManagementStaffPage({
   const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect(withBasePath("/auth/login"));
+  if (!userData.user) redirect("/auth/login");
 
   const { data: me } = await supabase
     .from("profiles")
@@ -66,7 +66,7 @@ export default async function ManagementStaffPage({
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect(withBasePath("/maintenance/new"));
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/maintenance/new");
 
   const { data: users, error } = await supabase
     .from("profiles")
