@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import { getCanonicalSiteUrl } from "@/lib/site-url";
+import { getAppUrl } from "@/lib/site-url";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -18,9 +18,9 @@ function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   });
 }
 
-async function sendReset(service: any, email: string, siteUrl: string) {
+async function sendReset(service: any, email: string, loginUrl: string) {
   const { error } = await service.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/login`,
+    redirectTo: loginUrl,
   });
   return !error;
 }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const siteUrl = getCanonicalSiteUrl(req.nextUrl.origin);
+  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
 
   let effectiveEmail = email;
   const usernameEmail = username ? makeUsernameEmail(username) : "";
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (sendInvite && effectiveEmail && !effectiveEmail.endsWith("@travellers.local")) {
-    const sent = await sendReset(service, effectiveEmail, siteUrl);
+    const sent = await sendReset(service, effectiveEmail, loginUrl);
     redirectUrl.searchParams.set("ok", sent ? "invite_sent" : "invite_failed");
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }

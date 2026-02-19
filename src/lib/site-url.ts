@@ -1,4 +1,9 @@
-export const DEFAULT_SITE_URL = "https://maintenance.tbresorts.com";
+export const DEFAULT_SITE_URL = "https://apps.tbresorts.com/maintenance";
+
+function normalizeBasePath(pathname: string) {
+  if (!pathname || pathname === "/") return "";
+  return `/${pathname.replace(/^\/+|\/+$/g, "")}`;
+}
 
 export function getCanonicalSiteUrl(fallbackOrigin?: string) {
   const raw =
@@ -8,8 +13,17 @@ export function getCanonicalSiteUrl(fallbackOrigin?: string) {
     DEFAULT_SITE_URL;
 
   try {
-    return new URL(raw).origin;
+    const url = new URL(raw);
+    return `${url.origin}${normalizeBasePath(url.pathname)}`;
   } catch {
     return DEFAULT_SITE_URL;
   }
+}
+
+export function getAppUrl(pathname: string, fallbackOrigin?: string) {
+  const base = getCanonicalSiteUrl(fallbackOrigin);
+  const url = new URL(base);
+  const basePath = normalizeBasePath(url.pathname);
+  const routePath = `/${pathname.replace(/^\/+/, "")}`;
+  return `${url.origin}${basePath}${routePath}`;
 }
