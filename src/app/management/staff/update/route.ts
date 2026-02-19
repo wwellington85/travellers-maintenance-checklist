@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
+  const setPasswordUrl = getAppUrl("/auth/set-password", req.nextUrl.origin);
 
   const { error: upErr } = await service
     .from("profiles")
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (sendInvite && effectiveEmail && !effectiveEmail.endsWith("@travellers.local")) {
-    const sent = await sendReset(service, effectiveEmail, loginUrl);
+    const sent = await sendReset(service, effectiveEmail, setPasswordUrl);
     redirectUrl.searchParams.set("ok", sent ? "invite_sent" : "invite_failed");
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }

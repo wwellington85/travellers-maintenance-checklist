@@ -83,7 +83,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // Logged in user visiting /auth routes -> route based on role
-  if (user && isAuthRoute && appPathname !== "/auth/logout") {
+  if (user && isAuthRoute && appPathname !== "/auth/logout" && appPathname !== "/auth/set-password") {
     const p = await getProfile();
     const url = req.nextUrl.clone();
     url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new";

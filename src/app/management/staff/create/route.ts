@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
+  const setPasswordUrl = getAppUrl("/auth/set-password", req.nextUrl.origin);
 
   const wantsEmailInvite = !!emailRaw && (role === "manager" || role === "admin") && !passwordRaw;
   const targetEmail = wantsEmailInvite
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
   } else if (wantsEmailInvite) {
     const { data, error } = await service.auth.admin.inviteUserByEmail(targetEmail, {
       data: { full_name: fullName },
-      redirectTo: loginUrl,
+      redirectTo: setPasswordUrl,
     });
     if (error || !data.user?.id) {
       redirectUrl.searchParams.set("err", "invite_failed");

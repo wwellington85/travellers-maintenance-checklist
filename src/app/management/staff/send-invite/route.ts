@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
+  const setPasswordUrl = getAppUrl("/auth/set-password", req.nextUrl.origin);
 
   const { data } = await service.auth.admin.getUserById(id);
   const email = (data?.user?.email || "").toLowerCase();
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await service.auth.resetPasswordForEmail(email, {
-    redirectTo: loginUrl,
+    redirectTo: setPasswordUrl,
   });
 
   redirectUrl.searchParams.set("ok", error ? "invite_failed" : "invite_sent");
