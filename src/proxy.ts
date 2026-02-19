@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { withBasePath, withoutBasePath } from "@/lib/app-path";
+import { withoutBasePath } from "@/lib/app-path";
 
 function createSupabaseProxyClient(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -40,7 +40,7 @@ export async function proxy(req: NextRequest) {
   // If not logged in, protect app routes
   if (!user && (isMaintenanceRoute || isManagementRoute || isAdminRoute)) {
     const url = req.nextUrl.clone();
-    url.pathname = withBasePath("/auth/login");
+    url.pathname = "/auth/login";
     url.searchParams.set("redirect", appPathname);
     return NextResponse.redirect(url);
   }
@@ -65,19 +65,19 @@ export async function proxy(req: NextRequest) {
 
     if (!p?.is_active) {
       const url = req.nextUrl.clone();
-      url.pathname = withBasePath("/auth/login");
+      url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
 
     if (isAdminRoute && p.role !== "admin") {
       const url = req.nextUrl.clone();
-      url.pathname = withBasePath("/maintenance/new");
+      url.pathname = "/maintenance/new";
       return NextResponse.redirect(url);
     }
 
     if (isManagementRoute && !["manager", "admin"].includes(p.role)) {
       const url = req.nextUrl.clone();
-      url.pathname = withBasePath("/maintenance/new");
+      url.pathname = "/maintenance/new";
       return NextResponse.redirect(url);
     }
   }
@@ -86,7 +86,7 @@ export async function proxy(req: NextRequest) {
   if (user && isAuthRoute && appPathname !== "/auth/logout") {
     const p = await getProfile();
     const url = req.nextUrl.clone();
-    url.pathname = withBasePath(p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new");
+    url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new";
     return NextResponse.redirect(url);
   }
 
