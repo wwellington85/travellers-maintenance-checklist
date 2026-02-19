@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import MaintenanceReportForm, { type GeneratorKey } from "./MaintenanceReportForm";
@@ -9,7 +10,14 @@ export default async function MaintenanceNewPage() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: keys, error } = await supabase
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
+  const keysClient = service || supabase;
+  const { data: keys, error } = await keysClient
     .from("generator_item_keys")
     .select("category,item_key,label,sort_order,is_active")
     .eq("is_active", true)

@@ -70,7 +70,7 @@ export default async function ManagementStaffPage({
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/maintenance/new");
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/new");
 
   const { data: users, error } = await service
     .from("profiles")

@@ -16,5 +16,5 @@ export default async function HomePage() {
   if (["manager", "admin"].includes(profile.role)) {
     redirect("/management/dashboard");
   }
-  redirect("/maintenance/new");
+  redirect("/new");
 }

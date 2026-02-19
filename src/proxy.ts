@@ -33,7 +33,8 @@ export async function proxy(req: NextRequest) {
   const appPathname = withoutBasePath(pathname);
 
   const isAuthRoute = appPathname.startsWith("/auth");
-  const isMaintenanceRoute = appPathname.startsWith("/maintenance");
+  const isMaintenanceRoute =
+    appPathname.startsWith("/maintenance") || appPathname.startsWith("/new") || appPathname.startsWith("/history");
   const isManagementRoute = appPathname.startsWith("/management");
   const isAdminRoute = appPathname.startsWith("/admin");
 
@@ -71,13 +72,13 @@ export async function proxy(req: NextRequest) {
 
     if (isAdminRoute && p.role !== "admin") {
       const url = req.nextUrl.clone();
-      url.pathname = "/maintenance/new";
+      url.pathname = "/new";
       return NextResponse.redirect(url);
     }
 
     if (isManagementRoute && !["manager", "admin"].includes(p.role)) {
       const url = req.nextUrl.clone();
-      url.pathname = "/maintenance/new";
+      url.pathname = "/new";
       return NextResponse.redirect(url);
     }
   }
@@ -86,7 +87,7 @@ export async function proxy(req: NextRequest) {
   if (user && isAuthRoute && appPathname !== "/auth/logout" && appPathname !== "/auth/set-password") {
     const p = await getProfile();
     const url = req.nextUrl.clone();
-    url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/maintenance/new";
+    url.pathname = p && ["manager", "admin"].includes(p.role) ? "/management/dashboard" : "/new";
     return NextResponse.redirect(url);
   }
 

@@ -29,7 +29,7 @@ export default async function MaintenanceHistoryPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/maintenance/new")}>
+            <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/new")}>
               New report
             </a>
             <SignOutButton />

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
-    return NextResponse.redirect(new URL(withBasePath("/maintenance/new"), req.url), { status: 303 });
+    return NextResponse.redirect(new URL(withBasePath("/new"), req.url), { status: 303 });
   }
 
   const form = await req.formData();

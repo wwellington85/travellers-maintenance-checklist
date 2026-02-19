@@ -16,7 +16,7 @@ export default async function AdminUsersPage() {
     .eq("id", userData.user.id)
     .single();
 
-  if (!me?.is_active || me.role !== "admin") redirect("/maintenance/new");
+  if (!me?.is_active || me.role !== "admin") redirect("/new");
 
   const { data: users, error } = await supabase
     .from("profiles")
