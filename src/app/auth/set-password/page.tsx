@@ -6,6 +6,7 @@ export default function SetPasswordPage() {
     <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-3">
         <div className="space-y-1">
+          <div className="text-sm font-medium text-muted-foreground">Travellers Maintenance Portal</div>
           <h1 className="text-2xl font-semibold">Set Your Password</h1>
           <p className="text-sm text-muted-foreground">Complete your invitation by creating a password.</p>
         </div>
