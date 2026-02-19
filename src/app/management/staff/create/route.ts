@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
     userId = data.user.id;
   }
 
-  const { error: upsertErr } = await supabase.from("profiles").upsert({
+  const { error: upsertErr } = await service.from("profiles").upsert({
     id: userId,
     full_name: fullName,
     role,
@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
 
   if (upsertErr) {
     redirectUrl.searchParams.set("err", "profile_upsert_failed");
+    redirectUrl.searchParams.set("msg", upsertErr.message);
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
 

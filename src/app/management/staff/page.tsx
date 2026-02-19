@@ -5,7 +5,7 @@ import SignOutButton from "@/components/SignOutButton";
 import { createClient } from "@supabase/supabase-js";
 import { withBasePath } from "@/lib/app-path";
 
-function statusText(ok?: string, err?: string) {
+function statusText(ok?: string, err?: string, msg?: string) {
   if (ok === "staff_created") return { type: "ok", text: "Staff account created." };
   if (ok === "staff_invited") return { type: "ok", text: "Staff created and invite email sent." };
   if (ok === "staff_updated") return { type: "ok", text: "Staff updated." };
@@ -18,8 +18,8 @@ function statusText(ok?: string, err?: string) {
   if (err === "maintenance_creds_required")
     return { type: "err", text: "Maintenance users require username and password (8+ chars)." };
   if (err === "weak_password") return { type: "err", text: "Password must be at least 8 characters." };
-  if (err === "profile_upsert_failed") return { type: "err", text: "Could not save profile." };
-  if (err === "profile_update_failed") return { type: "err", text: "Could not update profile." };
+  if (err === "profile_upsert_failed") return { type: "err", text: `Could not save profile.${msg ? ` ${msg}` : ""}` };
+  if (err === "profile_update_failed") return { type: "err", text: `Could not update profile.${msg ? ` ${msg}` : ""}` };
   if (err === "email_update_failed") return { type: "err", text: "Could not update email for this user." };
   if (err === "password_update_failed") return { type: "err", text: "Could not update password." };
   if (err === "missing_real_email") return { type: "err", text: "Add a real email first, then send invite." };
@@ -76,7 +76,7 @@ export default async function ManagementStaffPage({
 
   const authById = await listAuthUsersById();
   const editId = sp?.edit || "";
-  const notice = statusText(sp?.ok, sp?.err);
+  const notice = statusText(sp?.ok, sp?.err, sp?.msg);
 
   return (
     <main className="min-h-screen p-6">

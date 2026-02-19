@@ -81,20 +81,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
 
-  const { error: upErr } = await supabase
+  const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
+
+  const { error: upErr } = await service
     .from("profiles")
     .update({ role, is_active: is_active === "true", ...(full_name ? { full_name } : {}) })
     .eq("id", id);
 
   if (upErr) {
     redirectUrl.searchParams.set("err", "profile_update_failed");
+    redirectUrl.searchParams.set("msg", upErr.message);
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
-
-  const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const loginUrl = getAppUrl("/auth/login", req.nextUrl.origin);
 
   let effectiveEmail = email;
   const usernameEmail = username ? makeUsernameEmail(username) : "";
