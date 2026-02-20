@@ -6,15 +6,6 @@ import AutoHideNotice from "@/components/AutoHideNotice";
 import { createClient } from "@supabase/supabase-js";
 import { withBasePath } from "@/lib/app-path";
 
-function splitName(fullName?: string | null) {
-  const raw = String(fullName || "").trim();
-  if (!raw) return { firstName: "", lastName: "" };
-  const parts = raw.split(/\s+/);
-  const firstName = parts.shift() || "";
-  const lastName = parts.join(" ");
-  return { firstName, lastName };
-}
-
 function statusText(ok?: string, err?: string, msg?: string) {
   if (ok === "staff_created") return { type: "ok", text: "Staff account created." };
   if (ok === "staff_invited") return { type: "ok", text: "Staff created and invite email sent." };
@@ -174,30 +165,19 @@ export default async function ManagementStaffPage({
                     const isPlaceholderEmail = rowEmail.endsWith("@travellers.local");
                     const username = isPlaceholderEmail ? rowEmail.split("@")[0] : "";
                     const isEditing = editId === u.id;
-                    const { firstName, lastName } = splitName(u.full_name);
 
                     return (
                       <tr key={u.id} className="border-t align-top">
                         {isEditing ? (
                           <>
                             <td className="py-2 pr-4">
-                              <div className="grid grid-cols-1 gap-2">
-                                <input
-                                  form={`row-${u.id}`}
-                                  name="first_name"
-                                  defaultValue={firstName}
-                                  className="w-full rounded border px-2 py-1"
-                                  placeholder="First name"
-                                />
-                                <input
-                                  form={`row-${u.id}`}
-                                  name="last_name"
-                                  defaultValue={lastName}
-                                  className="w-full rounded border px-2 py-1"
-                                  placeholder="Last name"
-                                />
-                                <input form={`row-${u.id}`} type="hidden" name="full_name" defaultValue={u.full_name || ""} />
-                              </div>
+                              <input
+                                form={`row-${u.id}`}
+                                name="full_name"
+                                defaultValue={u.full_name || ""}
+                                className="w-full rounded border px-2 py-1"
+                                placeholder="Full name"
+                              />
                             </td>
                             <td className="py-2 pr-4">
                               <input
