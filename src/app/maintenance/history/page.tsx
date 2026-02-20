@@ -3,8 +3,21 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import { withBasePath } from "@/lib/app-path";
 
-export default async function MaintenanceHistoryPage() {
+const EDIT_WINDOW_MINUTES = 120;
+
+function canEdit(submittedAt: string) {
+  const submittedMs = new Date(submittedAt).getTime();
+  if (Number.isNaN(submittedMs)) return false;
+  return Date.now() - submittedMs <= EDIT_WINDOW_MINUTES * 60 * 1000;
+}
+
+export default async function MaintenanceHistoryPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | undefined>>;
+}) {
   const supabase = await createSupabaseServerClient();
+  const sp = (searchParams ? await searchParams : {}) as Record<string, string | undefined>;
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
@@ -36,6 +49,17 @@ export default async function MaintenanceHistoryPage() {
           </div>
         </header>
 
+        {sp?.save === "edited" ? (
+          <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+            Report updated successfully.
+          </div>
+        ) : null}
+        {sp?.err === "edit_window_expired" ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            Edit window has expired for that report.
+          </div>
+        ) : null}
+
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           {error ? (
             <p className="text-sm text-red-600">Error: {error.message}</p>
@@ -48,6 +72,7 @@ export default async function MaintenanceHistoryPage() {
                     <th className="py-2 pr-4">Submitted</th>
                     <th className="py-2 pr-4">Water</th>
                     <th className="py-2 pr-4">Electric</th>
+                    <th className="py-2 pr-4">Edit</th>
                     <th className="py-2 pr-0">ID</th>
                   </tr>
                 </thead>
@@ -58,6 +83,15 @@ export default async function MaintenanceHistoryPage() {
                       <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
                       <td className="py-2 pr-4">{r.water_meter_reading}</td>
                       <td className="py-2 pr-4">{r.electric_meter_reading}</td>
+                      <td className="py-2 pr-4">
+                        {canEdit(r.submitted_at) ? (
+                          <a className="underline" href={withBasePath(`/history/${r.id}/edit`)}>
+                            Edit
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Locked</span>
+                        )}
+                      </td>
                       <td className="py-2 pr-0 font-mono text-xs">{r.id}</td>
                     </tr>
                   ))}

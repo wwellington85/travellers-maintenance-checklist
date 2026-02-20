@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { withBasePath } from "@/lib/app-path";
 
@@ -13,6 +13,8 @@ export type GeneratorKey = {
 };
 
 type GeneratorStatus = "completed" | "not_completed" | "na";
+const DRAFT_KEY = "maintenance_report_draft_v1";
+const EDIT_WINDOW_MINUTES = 120;
 
 function todayISODate() {
   const d = new Date();
@@ -41,7 +43,10 @@ export default function MaintenanceReportForm({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [successSubmittedAt, setSuccessSubmittedAt] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
+  const [lastAutosaveAt, setLastAutosaveAt] = useState<string | null>(null);
 
   // --- Report fields ---
   const [reportDate, setReportDate] = useState(todayISODate());
@@ -102,6 +107,185 @@ export default function MaintenanceReportForm({
 
   // generator statuses keyed by `${category}:${item_key}`
   const [generatorStatuses, setGeneratorStatuses] = useState<Record<string, GeneratorStatus>>({});
+
+  function resetForm() {
+    setWaterMeterReading("");
+    setWaterMeterTime(currentTimeHHMM());
+    setElectricMeterReading("");
+    setElectricMeterTime(currentTimeHHMM());
+    setKitchenTank1("");
+    setKitchenTank2("");
+    setLaundryTank1("");
+    setLaundryTank2("");
+    setSpareTank1("");
+    setSpareTank2("");
+    setWaterHeaterTemp("");
+    setWaterHeaterTempTime(currentTimeHHMM());
+    setSoftwater1("");
+    setSoftwater2("");
+    setWaterTanksStatus("");
+    setWaterLevelCheckTime(currentTimeHHMM());
+    setWaterTanksNotes("");
+    setPumpPsi("");
+    setPumpPsiTime(currentTimeHHMM());
+    setLights({
+      deluxe: false,
+      superior: false,
+      standard: false,
+      garden: false,
+      pooldeck: false,
+      restaurant: false,
+      restaurantDeck: false,
+    });
+    setLightsIssuesNotes("");
+    setPlumbing({
+      restaurantMale: false,
+      restaurantFemale: false,
+      scubaShower: false,
+      gymFootwash: false,
+      poolShower: false,
+      familyRoomBathroom: false,
+      laundryFemaleBathroom: false,
+      laundryMaleBathroom: false,
+      lobbyMaleBathroom: false,
+      lobbyFemaleBathroom: false,
+    });
+    setIssuesSummary("");
+    setGeneratorStatuses({});
+  }
+
+  function clearDraftState() {
+    try {
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+    setDraftRestoredAt(null);
+    setLastAutosaveAt(null);
+  }
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as any;
+      const values = parsed?.values || {};
+      setReportDate(values.reportDate || todayISODate());
+      setWaterMeterReading(values.waterMeterReading || "");
+      setWaterMeterTime(values.waterMeterTime || currentTimeHHMM());
+      setElectricMeterReading(values.electricMeterReading || "");
+      setElectricMeterTime(values.electricMeterTime || currentTimeHHMM());
+      setKitchenTank1(values.kitchenTank1 || "");
+      setKitchenTank2(values.kitchenTank2 || "");
+      setLaundryTank1(values.laundryTank1 || "");
+      setLaundryTank2(values.laundryTank2 || "");
+      setSpareTank1(values.spareTank1 || "");
+      setSpareTank2(values.spareTank2 || "");
+      setWaterHeaterTemp(values.waterHeaterTemp || "");
+      setWaterHeaterTempTime(values.waterHeaterTempTime || currentTimeHHMM());
+      setSoftwater1(values.softwater1 || "");
+      setSoftwater2(values.softwater2 || "");
+      setWaterTanksStatus(values.waterTanksStatus || "");
+      setWaterLevelCheckTime(values.waterLevelCheckTime || currentTimeHHMM());
+      setWaterTanksNotes(values.waterTanksNotes || "");
+      setPumpPsi(values.pumpPsi || "");
+      setPumpPsiTime(values.pumpPsiTime || currentTimeHHMM());
+      setLights(values.lights || {
+        deluxe: false,
+        superior: false,
+        standard: false,
+        garden: false,
+        pooldeck: false,
+        restaurant: false,
+        restaurantDeck: false,
+      });
+      setLightsIssuesNotes(values.lightsIssuesNotes || "");
+      setPlumbing(values.plumbing || {
+        restaurantMale: false,
+        restaurantFemale: false,
+        scubaShower: false,
+        gymFootwash: false,
+        poolShower: false,
+        familyRoomBathroom: false,
+        laundryFemaleBathroom: false,
+        laundryMaleBathroom: false,
+        lobbyMaleBathroom: false,
+        lobbyFemaleBathroom: false,
+      });
+      setIssuesSummary(values.issuesSummary || "");
+      setGeneratorStatuses(values.generatorStatuses || {});
+      if (parsed?.savedAt) {
+        setDraftRestoredAt(parsed.savedAt);
+        setLastAutosaveAt(parsed.savedAt);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (successId) return;
+    const payload = {
+      savedAt: new Date().toISOString(),
+      values: {
+        reportDate,
+        waterMeterReading,
+        waterMeterTime,
+        electricMeterReading,
+        electricMeterTime,
+        kitchenTank1,
+        kitchenTank2,
+        laundryTank1,
+        laundryTank2,
+        spareTank1,
+        spareTank2,
+        waterHeaterTemp,
+        waterHeaterTempTime,
+        softwater1,
+        softwater2,
+        waterTanksStatus,
+        waterLevelCheckTime,
+        waterTanksNotes,
+        pumpPsi,
+        pumpPsiTime,
+        lights,
+        lightsIssuesNotes,
+        plumbing,
+        issuesSummary,
+        generatorStatuses,
+      },
+    };
+    const t = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+        setLastAutosaveAt(payload.savedAt);
+      } catch {}
+    }, 2500);
+    return () => window.clearTimeout(t);
+  }, [
+    successId,
+    reportDate,
+    waterMeterReading,
+    waterMeterTime,
+    electricMeterReading,
+    electricMeterTime,
+    kitchenTank1,
+    kitchenTank2,
+    laundryTank1,
+    laundryTank2,
+    spareTank1,
+    spareTank2,
+    waterHeaterTemp,
+    waterHeaterTempTime,
+    softwater1,
+    softwater2,
+    waterTanksStatus,
+    waterLevelCheckTime,
+    waterTanksNotes,
+    pumpPsi,
+    pumpPsiTime,
+    lights,
+    lightsIssuesNotes,
+    plumbing,
+    issuesSummary,
+    generatorStatuses,
+  ]);
 
   function setGenStatus(category: "visual" | "operational", item_key: string, status: GeneratorStatus) {
     setGeneratorStatuses((prev) => ({ ...prev, [`${category}:${item_key}`]: status }));
@@ -221,7 +405,7 @@ export default function MaintenanceReportForm({
       const { data: inserted, error: insertErr } = await supabase
         .from("maintenance_reports")
         .insert(reportPayload)
-        .select("id")
+        .select("id, submitted_at")
         .single();
 
       if (insertErr) throw insertErr;
@@ -239,6 +423,8 @@ export default function MaintenanceReportForm({
       if (genErr) throw genErr;
 
       setSuccessId(reportId);
+      setSuccessSubmittedAt(inserted.submitted_at || new Date().toISOString());
+      clearDraftState();
     } catch (err: any) {
       // handle unique violation (one report per date)
       const msg =
@@ -252,9 +438,18 @@ export default function MaintenanceReportForm({
 
   if (successId) {
     return (
-      <section className="rounded-xl border bg-white p-4 shadow-sm overflow-hidden sm:p-6">
-        <h2 className="text-lg font-semibold">Submitted successfully</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <section className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm overflow-hidden sm:p-6">
+        <h2 className="text-lg font-semibold text-green-900">Report saved successfully</h2>
+        <p className="mt-2 text-sm text-green-800">
+          Your checklist has been submitted to the database.
+        </p>
+        <p className="mt-1 text-sm text-green-900">
+          Saved at:{" "}
+          <span className="font-medium">
+            {successSubmittedAt ? new Date(successSubmittedAt).toLocaleString() : new Date().toLocaleString()}
+          </span>
+        </p>
+        <p className="mt-1 text-xs text-green-900">
           Report ID: <span className="font-mono">{successId}</span>
         </p>
         <div className="mt-6 flex gap-3">
@@ -262,57 +457,18 @@ export default function MaintenanceReportForm({
             className="rounded-lg bg-black px-4 py-2 text-white"
             onClick={() => {
               setSuccessId(null);
+              setSuccessSubmittedAt(null);
               setErrorMsg(null);
-              // Keep date as-is; reset most fields for next entry
-              setWaterMeterReading("");
-              setWaterMeterTime(currentTimeHHMM());
-              setElectricMeterReading("");
-              setElectricMeterTime(currentTimeHHMM());
-              setKitchenTank1("");
-              setKitchenTank2("");
-              setLaundryTank1("");
-              setLaundryTank2("");
-              setSpareTank1("");
-              setSpareTank2("");
-              setWaterHeaterTemp("");
-              setWaterHeaterTempTime(currentTimeHHMM());
-              setSoftwater1("");
-              setSoftwater2("");
-              setWaterTanksStatus("");
-              setWaterLevelCheckTime(currentTimeHHMM());
-              setWaterTanksNotes("");
-              setPumpPsi("");
-              setPumpPsiTime(currentTimeHHMM());
-              setLights({
-                deluxe: false,
-                superior: false,
-                standard: false,
-                garden: false,
-                pooldeck: false,
-                restaurant: false,
-                restaurantDeck: false,
-              });
-              setLightsIssuesNotes("");
-              setPlumbing({
-                restaurantMale: false,
-                restaurantFemale: false,
-                scubaShower: false,
-                gymFootwash: false,
-                poolShower: false,
-                familyRoomBathroom: false,
-                laundryFemaleBathroom: false,
-                laundryMaleBathroom: false,
-                lobbyMaleBathroom: false,
-                lobbyFemaleBathroom: false,
-              });
-              setIssuesSummary("");
-              setGeneratorStatuses({});
+              resetForm();
             }}
           >
             Submit another
           </button>
           <a className="rounded-lg border px-4 py-2" href={withBasePath("/history")}>
             View my history
+          </a>
+          <a className="rounded-lg border px-4 py-2" href={withBasePath(`/history/${successId}/edit`)}>
+            Edit this report ({EDIT_WINDOW_MINUTES} min)
           </a>
         </div>
       </section>
@@ -321,6 +477,11 @@ export default function MaintenanceReportForm({
 
   return (
     <form onSubmit={onSubmit} className="min-w-0 space-y-6">
+      {draftRestoredAt ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          Restored unsent draft from {new Date(draftRestoredAt).toLocaleString()}.
+        </div>
+      ) : null}
       {errorMsg ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {errorMsg}
@@ -683,7 +844,21 @@ export default function MaintenanceReportForm({
         <a href={withBasePath("/history")} className="rounded-lg border px-4 py-2">
           My history
         </a>
+        <button
+          type="button"
+          className="rounded-lg border px-4 py-2 text-sm"
+          onClick={() => {
+            clearDraftState();
+            resetForm();
+            setReportDate(todayISODate());
+          }}
+        >
+          Clear draft
+        </button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        {lastAutosaveAt ? `Draft autosaved at ${new Date(lastAutosaveAt).toLocaleTimeString()}` : "Draft autosave enabled."}
+      </p>
     </form>
   );
 }
