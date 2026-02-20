@@ -108,7 +108,7 @@ export default async function EditReportPage({
           </div>
         </header>
 
-        <form action={`/management/reports/${reportId}/edit`} method="post" className="space-y-6">
+        <form action={`/management/reports/${reportId}/edit/save`} method="post" className="space-y-6">
           <section className="rounded-xl border bg-white p-6 shadow-sm space-y-4">
             <h2 className="text-lg font-semibold">Basics</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
