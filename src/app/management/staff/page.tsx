@@ -146,7 +146,111 @@ export default async function ManagementStaffPage({
           {error ? (
             <p className="text-sm text-red-600">{error.message}</p>
           ) : users && users.length ? (
-            <div className="overflow-x-auto">
+            <>
+              <div className="space-y-3 md:hidden">
+                {users.map((u: any) => {
+                  const rowEmail = authById.get(u.id)?.email || "";
+                  const isPlaceholderEmail = rowEmail.endsWith("@travellers.local");
+                  const username = isPlaceholderEmail ? rowEmail.split("@")[0] : "";
+                  const isEditing = editId === u.id;
+
+                  return (
+                    <article key={u.id} className="rounded-lg border p-4 space-y-3">
+                      {isEditing ? (
+                        <form action={withBasePath("/management/staff/update")} method="post" className="space-y-3">
+                          <input type="hidden" name="id" value={u.id} />
+                          <label className="block text-xs text-muted-foreground">
+                            Name
+                            <input
+                              name="full_name"
+                              defaultValue={u.full_name || ""}
+                              className="mt-1 w-full rounded border px-2 py-1"
+                              placeholder="Full name"
+                            />
+                          </label>
+                          <label className="block text-xs text-muted-foreground">
+                            Username
+                            <input
+                              name="username"
+                              defaultValue={username}
+                              className="mt-1 w-full rounded border px-2 py-1"
+                              placeholder="Username"
+                            />
+                          </label>
+                          <label className="block text-xs text-muted-foreground">
+                            Email
+                            <input
+                              name="email"
+                              defaultValue={isPlaceholderEmail ? "" : rowEmail}
+                              className="mt-1 w-full rounded border px-2 py-1"
+                              placeholder="Email"
+                            />
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="block text-xs text-muted-foreground">
+                              Role
+                              <select name="role" defaultValue={u.role} className="mt-1 w-full rounded border px-2 py-1">
+                                <option value="maintenance">maintenance</option>
+                                <option value="manager">manager</option>
+                                {me.role === "admin" ? <option value="admin">admin</option> : null}
+                              </select>
+                            </label>
+                            <label className="block text-xs text-muted-foreground">
+                              Status
+                              <select name="is_active" defaultValue={String(u.is_active)} className="mt-1 w-full rounded border px-2 py-1">
+                                <option value="true">active</option>
+                                <option value="false">inactive</option>
+                              </select>
+                            </label>
+                          </div>
+                          <label className="block text-xs text-muted-foreground">
+                            New password
+                            <input name="password" type="password" className="mt-1 w-full rounded border px-2 py-1" />
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <button className="rounded border px-2 py-1 text-sm">Save</button>
+                            <button name="send_invite" value="true" className="rounded border px-2 py-1 text-sm">
+                              Save + Send invite
+                            </button>
+                            <Link className="rounded border px-2 py-1 text-sm" href="/management/staff">
+                              Cancel
+                            </Link>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="font-medium">{u.full_name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {username ? `Username: ${username}` : "Username: —"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Email: {rowEmail ? (isPlaceholderEmail ? "placeholder email" : rowEmail) : "—"}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Role: {u.role} • Active: {u.is_active ? "Yes" : "No"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Created: {new Date(u.created_at).toLocaleString()}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Link className="rounded border px-2 py-1 text-sm" href={`/management/staff?edit=${u.id}`}>
+                              Edit
+                            </Link>
+                            {!isPlaceholderEmail && rowEmail ? (
+                              <form action={withBasePath("/management/staff/send-invite")} method="post">
+                                <input type="hidden" name="id" value={u.id} />
+                                <button className="rounded border px-2 py-1 text-sm">Send invite</button>
+                              </form>
+                            ) : null}
+                          </div>
+                        </>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
               <table className="min-w-[980px] w-full text-sm">
                 <thead className="text-left text-gray-600">
                   <tr>
@@ -274,7 +378,8 @@ export default async function ManagementStaffPage({
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">No users found.</p>
           )}

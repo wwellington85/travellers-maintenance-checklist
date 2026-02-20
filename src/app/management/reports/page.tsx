@@ -94,63 +94,109 @@ export default async function ManagementReportsPage() {
           {error ? (
             <p className="text-sm text-red-600">Error: {error.message}</p>
           ) : reports && reports.length ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-[760px] w-full text-sm">
-                <thead className="text-left text-gray-600">
-                  <tr>
-                    <th className="py-2 pr-4">Date</th>
-                    <th className="py-2 pr-4">Submitted</th>
-                    <th className="py-2 pr-4">Submitted by</th>
-                    <th className="py-2 pr-4">Water Δ</th>
-                    <th className="py-2 pr-4">Electric Δ</th>
-                    <th className="py-2 pr-4">Flags</th>
-                    <th className="py-2 pr-0">Open</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.map((r: any) => {
-                    const rid = r?.id;
-                    const canView = typeof rid === "string" && rid.length > 0;
-                    const d = deltasByDate.get(r.report_date);
-                    const ex = exByDate.get(r.report_date);
-                    const reasons: string[] = ex?.exception_reasons || [];
-                    const flagCount = reasons.length;
+            <>
+              <div className="space-y-3 md:hidden">
+                {reports.map((r: any) => {
+                  const rid = r?.id;
+                  const canView = typeof rid === "string" && rid.length > 0;
+                  const d = deltasByDate.get(r.report_date);
+                  const ex = exByDate.get(r.report_date);
+                  const reasons: string[] = ex?.exception_reasons || [];
+                  const flagCount = reasons.length;
 
-                    return (
-                      <tr key={rid || `${r.report_date}-${r.submitted_at}`} className="border-t align-top">
-                        <td className="py-2 pr-4">{r.report_date}</td>
-                        <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
-                        <td className="py-2 pr-4">
-                          {submitterById.get(r.submitted_by) || (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-4">{fmt(d?.water_delta)}</td>
-                        <td className="py-2 pr-4">{fmt(d?.electric_delta)}</td>
-                        <td className="py-2 pr-4">
-                          {flagCount ? (
-                            <span className="rounded-full border px-2 py-1 text-xs">
-                              {flagCount} flag{flagCount === 1 ? "" : "s"}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-0">
-                          {canView ? (
-                            <Link className="underline" href={`/management/reports/${rid}`}>
-                              View
-                            </Link>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">No ID</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  return (
+                    <article key={rid || `${r.report_date}-${r.submitted_at}`} className="rounded-lg border p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-medium">{r.report_date}</div>
+                          <div className="text-xs text-muted-foreground">{new Date(r.submitted_at).toLocaleString()}</div>
+                        </div>
+                        {flagCount ? (
+                          <span className="rounded-full border px-2 py-1 text-xs">
+                            {flagCount} flag{flagCount === 1 ? "" : "s"}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No flags</span>
+                        )}
+                      </div>
+                      <div className="text-sm">
+                        Submitted by: {submitterById.get(r.submitted_by) || "—"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Water Δ: {fmt(d?.water_delta)} • Electric Δ: {fmt(d?.electric_delta)}
+                      </div>
+                      <div>
+                        {canView ? (
+                          <Link className="underline text-sm" href={`/management/reports/${rid}`}>
+                            Open report
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No ID</span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-[760px] w-full text-sm">
+                  <thead className="text-left text-gray-600">
+                    <tr>
+                      <th className="py-2 pr-4">Date</th>
+                      <th className="py-2 pr-4">Submitted</th>
+                      <th className="py-2 pr-4">Submitted by</th>
+                      <th className="py-2 pr-4">Water Δ</th>
+                      <th className="py-2 pr-4">Electric Δ</th>
+                      <th className="py-2 pr-4">Flags</th>
+                      <th className="py-2 pr-0">Open</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.map((r: any) => {
+                      const rid = r?.id;
+                      const canView = typeof rid === "string" && rid.length > 0;
+                      const d = deltasByDate.get(r.report_date);
+                      const ex = exByDate.get(r.report_date);
+                      const reasons: string[] = ex?.exception_reasons || [];
+                      const flagCount = reasons.length;
+
+                      return (
+                        <tr key={rid || `${r.report_date}-${r.submitted_at}`} className="border-t align-top">
+                          <td className="py-2 pr-4">{r.report_date}</td>
+                          <td className="py-2 pr-4">{new Date(r.submitted_at).toLocaleString()}</td>
+                          <td className="py-2 pr-4">
+                            {submitterById.get(r.submitted_by) || (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4">{fmt(d?.water_delta)}</td>
+                          <td className="py-2 pr-4">{fmt(d?.electric_delta)}</td>
+                          <td className="py-2 pr-4">
+                            {flagCount ? (
+                              <span className="rounded-full border px-2 py-1 text-xs">
+                                {flagCount} flag{flagCount === 1 ? "" : "s"}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-0">
+                            {canView ? (
+                              <Link className="underline" href={`/management/reports/${rid}`}>
+                                View
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">No ID</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">No reports found.</p>
           )}
