@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { withBasePath } from "@/lib/app-path";
-
-const EDIT_WINDOW_MINUTES = 120;
+import { MAINTENANCE_EDIT_WINDOW_MINUTES } from "@/lib/config";
 
 function supabaseFromRequest(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -43,6 +42,14 @@ function parseOptionalBool(v: FormDataEntryValue | null) {
   return null;
 }
 
+function parseWaterHeaterStatus(v: FormDataEntryValue | null) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "hot") return 2;
+  if (s === "warm") return 1;
+  if (s === "cold") return 0;
+  return null;
+}
+
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const editUrl = withBasePath(`/history/${id}/edit`);
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   const submittedMs = new Date(report.submitted_at).getTime();
-  if (Number.isNaN(submittedMs) || Date.now() - submittedMs > EDIT_WINDOW_MINUTES * 60 * 1000) {
+  if (Number.isNaN(submittedMs) || Date.now() - submittedMs > MAINTENANCE_EDIT_WINDOW_MINUTES * 60 * 1000) {
     return NextResponse.redirect(new URL(`${historyUrl}?err=edit_window_expired`, req.url), { status: 303 });
   }
 
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     water_meter_time: parseOptionalText(form.get("water_meter_time")),
     electric_meter_reading: parseOptionalNumber(form.get("electric_meter_reading")),
     electric_meter_time: parseOptionalText(form.get("electric_meter_time")),
-    water_heater_temp: parseOptionalNumber(form.get("water_heater_temp")),
+    water_heater_temp: parseWaterHeaterStatus(form.get("water_heater_status")),
     water_heater_temp_time: parseOptionalText(form.get("water_heater_temp_time")),
     water_tanks_status: parseOptionalText(form.get("water_tanks_status")),
     water_level_check_time: parseOptionalText(form.get("water_level_check_time")),

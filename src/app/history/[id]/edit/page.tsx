@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import { MAINTENANCE_EDIT_WINDOW_MINUTES } from "@/lib/config";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const EDIT_WINDOW_MINUTES = 120;
 
 function toInput(v: unknown) {
   if (v === null || v === undefined) return "";
@@ -44,7 +44,7 @@ export default async function MaintenanceEditReportPage({
   if (!report) redirect("/history");
 
   const submittedAtMs = new Date(report.submitted_at).getTime();
-  if (Number.isNaN(submittedAtMs) || Date.now() - submittedAtMs > EDIT_WINDOW_MINUTES * 60 * 1000) {
+  if (Number.isNaN(submittedAtMs) || Date.now() - submittedAtMs > MAINTENANCE_EDIT_WINDOW_MINUTES * 60 * 1000) {
     redirect("/history?err=edit_window_expired");
   }
 
@@ -55,7 +55,7 @@ export default async function MaintenanceEditReportPage({
           <div>
             <h1 className="text-2xl font-semibold">Edit Submitted Report</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              You can edit for up to {EDIT_WINDOW_MINUTES} minutes after submitting.
+              You can edit for up to {MAINTENANCE_EDIT_WINDOW_MINUTES} minutes after submitting.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -102,8 +102,13 @@ export default async function MaintenanceEditReportPage({
                 <input name="electric_meter_time" type="time" defaultValue={toInput(report.electric_meter_time)} className="w-full rounded border px-3 py-2 text-sm" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Water heater temperature</label>
-                <input name="water_heater_temp" type="number" defaultValue={toInput(report.water_heater_temp)} className="w-full rounded border px-3 py-2 text-sm" />
+                <label className="text-sm font-medium">Water heater status</label>
+                <select name="water_heater_status" defaultValue={report.water_heater_temp === 2 ? "hot" : report.water_heater_temp === 1 ? "warm" : report.water_heater_temp === 0 ? "cold" : ""} className="w-full rounded border px-3 py-2 text-sm">
+                  <option value="">Select…</option>
+                  <option value="hot">Hot</option>
+                  <option value="warm">Warm</option>
+                  <option value="cold">Cold</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Time recorded (water heater/softwater)</label>

@@ -2,13 +2,12 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import { withBasePath } from "@/lib/app-path";
-
-const EDIT_WINDOW_MINUTES = 120;
+import { MAINTENANCE_EDIT_WINDOW_MINUTES } from "@/lib/config";
 
 function canEdit(submittedAt: string) {
   const submittedMs = new Date(submittedAt).getTime();
   if (Number.isNaN(submittedMs)) return false;
-  return Date.now() - submittedMs <= EDIT_WINDOW_MINUTES * 60 * 1000;
+  return Date.now() - submittedMs <= MAINTENANCE_EDIT_WINDOW_MINUTES * 60 * 1000;
 }
 
 export default async function MaintenanceHistoryPage({

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useEffect, useRef, useState } from "react";
 import { withBasePath } from "@/lib/app-path";
+import { MAINTENANCE_EDIT_WINDOW_MINUTES } from "@/lib/config";
 
 export type GeneratorKey = {
   category: "visual" | "operational";
@@ -14,7 +14,7 @@ export type GeneratorKey = {
 
 type GeneratorStatus = "completed" | "not_completed" | "na";
 const DRAFT_KEY = "maintenance_report_draft_v1";
-const EDIT_WINDOW_MINUTES = 120;
+type WaterHeaterStatus = "hot" | "warm" | "cold" | "";
 
 function todayISODate() {
   const d = new Date();
@@ -36,8 +36,6 @@ export default function MaintenanceReportForm({
 }: {
   generatorKeys: GeneratorKey[];
 }) {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-
   const visualKeys = generatorKeys.filter((k) => k.category === "visual");
   const operationalKeys = generatorKeys.filter((k) => k.category === "operational");
 
@@ -64,7 +62,7 @@ export default function MaintenanceReportForm({
   const [spareTank1, setSpareTank1] = useState("");
   const [spareTank2, setSpareTank2] = useState("");
 
-  const [waterHeaterTemp, setWaterHeaterTemp] = useState("");
+  const [waterHeaterTemp, setWaterHeaterTemp] = useState<WaterHeaterStatus>("");
   const [waterHeaterTempTime, setWaterHeaterTempTime] = useState(() => currentTimeHHMM());
 
   const [softwater1, setSoftwater1] = useState<"hard" | "soft" | "">("");
@@ -107,6 +105,16 @@ export default function MaintenanceReportForm({
 
   // generator statuses keyed by `${category}:${item_key}`
   const [generatorStatuses, setGeneratorStatuses] = useState<Record<string, GeneratorStatus>>({});
+
+  const errorRef = useRef<HTMLDivElement | null>(null);
+  const windowMinutes = MAINTENANCE_EDIT_WINDOW_MINUTES;
+
+  function waterHeaterNumeric(status: WaterHeaterStatus) {
+    if (status === "hot") return 2;
+    if (status === "warm") return 1;
+    if (status === "cold") return 0;
+    return null;
+  }
 
   function resetForm() {
     setWaterMeterReading("");
@@ -317,7 +325,8 @@ export default function MaintenanceReportForm({
     if (!reportDate) return "Please select the date of check.";
     if (waterMeterReading.trim() === "") return "Please enter the water meter reading.";
     if (electricMeterReading.trim() === "") return "Please enter the electric meter reading.";
-    if (!waterHeaterTempTime) return "Please enter the time you recorded the water heater temperature.";
+    if (!waterHeaterTemp) return "Please select water heater status (hot, warm, or cold).";
+    if (!waterHeaterTempTime) return "Please enter the time you recorded the water heater status.";
     if (waterTanksStatus && waterTanksStatus !== "all_full" && waterTanksNotes.trim().length === 0) {
       return "If water tanks are not all full, please state which ones.";
     }
@@ -333,25 +342,15 @@ export default function MaintenanceReportForm({
     const validationError = validate();
     if (validationError) {
       setErrorMsg(validationError);
+      window.setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      if (userErr) throw userErr;
-      if (!userData.user) {
-        setErrorMsg("You are not signed in. Please log in again.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const submittedBy = userData.user.id;
-
       const reportPayload: Record<string, any> = {
         report_date: reportDate,
-        submitted_by: submittedBy,
 
         water_meter_reading: Number(waterMeterReading),
         water_meter_time: waterMeterTime || null,
@@ -366,7 +365,7 @@ export default function MaintenanceReportForm({
         spare_tank_1: parseNum(spareTank1),
         spare_tank_2: parseNum(spareTank2),
 
-        water_heater_temp: parseNum(waterHeaterTemp),
+        water_heater_temp: waterHeaterNumeric(waterHeaterTemp),
         water_heater_temp_time: waterHeaterTempTime,
 
         softwater_tank_1: softwater1 || null,
@@ -399,31 +398,32 @@ export default function MaintenanceReportForm({
         plumbing_lobby_male_bathroom_ok: plumbing.lobbyMaleBathroom,
         plumbing_lobby_female_bathroom_ok: plumbing.lobbyFemaleBathroom,
 
-        issues_summary: issuesSummary.trim() || null,
+        issues_summary:
+          [issuesSummary.trim(), waterHeaterTemp === "cold" ? "[AUTO FLAG] Water heater reported COLD." : ""]
+            .filter(Boolean)
+            .join("\n") || null,
       };
 
-      const { data: inserted, error: insertErr } = await supabase
-        .from("maintenance_reports")
-        .insert(reportPayload)
-        .select("id, submitted_at")
-        .single();
-
-      if (insertErr) throw insertErr;
-
-      const reportId = inserted.id as string;
-
       const items = [...visualKeys, ...operationalKeys].map((k) => ({
-        report_id: reportId,
         category: k.category,
         item_key: k.item_key,
         status: generatorStatuses[`${k.category}:${k.item_key}`] as GeneratorStatus,
+        notes: null,
       }));
 
-      const { error: genErr } = await supabase.from("generator_check_items").insert(items);
-      if (genErr) throw genErr;
+      const submitRes = await fetch(withBasePath("/new/submit"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportPayload, items }),
+      });
 
-      setSuccessId(reportId);
-      setSuccessSubmittedAt(inserted.submitted_at || new Date().toISOString());
+      const submitJson = await submitRes.json().catch(() => null);
+      if (!submitRes.ok || !submitJson?.ok || !submitJson?.reportId) {
+        throw new Error(submitJson?.error || "Could not submit report.");
+      }
+
+      setSuccessId(submitJson.reportId);
+      setSuccessSubmittedAt(submitJson.submittedAt || new Date().toISOString());
       clearDraftState();
     } catch (err: any) {
       // handle unique violation (one report per date)
@@ -431,6 +431,7 @@ export default function MaintenanceReportForm({
         err?.message ||
         (typeof err === "string" ? err : "Something went wrong submitting the report.");
       setErrorMsg(msg);
+      window.setTimeout(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
     } finally {
       setIsSubmitting(false);
     }
@@ -468,7 +469,7 @@ export default function MaintenanceReportForm({
             View my history
           </a>
           <a className="rounded-lg border px-4 py-2" href={withBasePath(`/history/${successId}/edit`)}>
-            Edit this report ({EDIT_WINDOW_MINUTES} min)
+            Edit this report ({windowMinutes} min)
           </a>
         </div>
       </section>
@@ -483,7 +484,7 @@ export default function MaintenanceReportForm({
         </div>
       ) : null}
       {errorMsg ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div ref={errorRef} className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {errorMsg}
         </div>
       ) : null}
@@ -587,12 +588,12 @@ export default function MaintenanceReportForm({
           </div>
           <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Spare tank 1</label>
-            <input type="number" inputMode="decimal" value={spareTank1} onChange={(e)=>setSpareTank1(e.target.value)}
+            <input type="text" value={spareTank1} onChange={(e)=>setSpareTank1(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
           <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium">Spare tank 2</label>
-            <input type="number" inputMode="decimal" value={spareTank2} onChange={(e)=>setSpareTank2(e.target.value)}
+            <input type="text" value={spareTank2} onChange={(e)=>setSpareTank2(e.target.value)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
           </div>
         </div>
@@ -604,15 +605,17 @@ export default function MaintenanceReportForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="min-w-0 space-y-2">
-            <label className="text-sm font-medium">Water heater temperature</label>
-            <input
-              type="number"
-              inputMode="decimal"
+            <label className="text-sm font-medium">Water heater status *</label>
+            <select
               value={waterHeaterTemp}
-              onChange={(e) => setWaterHeaterTemp(e.target.value)}
+              onChange={(e) => setWaterHeaterTemp(e.target.value as WaterHeaterStatus)}
               className="w-full min-w-0 max-w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              placeholder="e.g. 120"
-            />
+            >
+              <option value="">Select…</option>
+              <option value="hot">Hot</option>
+              <option value="warm">Warm</option>
+              <option value="cold">Cold</option>
+            </select>
           </div>
           <div className="min-w-0 flex max-w-[12rem] flex-col gap-2 sm:max-w-full">
             <label className="text-sm font-medium">Time recorded (water heater / softwater) *</label>
@@ -856,6 +859,9 @@ export default function MaintenanceReportForm({
           Clear draft
         </button>
       </div>
+      {errorMsg ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMsg}</div>
+      ) : null}
       <p className="text-xs text-muted-foreground">
         {lastAutosaveAt ? `Draft autosaved at ${new Date(lastAutosaveAt).toLocaleTimeString()}` : "Draft autosave enabled."}
       </p>
