@@ -62,7 +62,10 @@ export async function POST(req: NextRequest) {
   const id = String(form.get("id") || "");
   const role = String(form.get("role") || "");
   const is_active = String(form.get("is_active") || "");
-  const full_name = String(form.get("full_name") || "").trim();
+  const full_name_raw = String(form.get("full_name") || "").trim();
+  const first_name = String(form.get("first_name") || "").trim();
+  const last_name = String(form.get("last_name") || "").trim();
+  const full_name = [first_name, last_name].filter(Boolean).join(" ") || full_name_raw;
   const email = String(form.get("email") || "").trim().toLowerCase();
   const username = String(form.get("username") || "").trim();
   const password = String(form.get("password") || "");
