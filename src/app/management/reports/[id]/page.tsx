@@ -153,6 +153,9 @@ export default async function ReportDetailPage({
             <p className="mt-1 text-xs text-muted-foreground font-mono">{report.id}</p>
           </div>
           <div className="flex items-center gap-3">
+            <Link className="rounded-lg border px-3 py-2 text-sm" href={`/management/reports/${reportId}/edit`}>
+              Edit
+            </Link>
             <Link className="rounded-lg border px-3 py-2 text-sm" href={`/management/reports/${reportId}/print`}>
               Print
             </Link>

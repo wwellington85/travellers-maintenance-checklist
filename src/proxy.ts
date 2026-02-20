@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { withoutBasePath } from "@/lib/app-path";
+import { APP_BASE_PATH, withoutBasePath } from "@/lib/app-path";
 
 function createSupabaseProxyClient(req: NextRequest, res: NextResponse) {
   return createServerClient(
@@ -31,6 +31,13 @@ export async function proxy(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
   const appPathname = withoutBasePath(pathname);
+
+  // When hosted with a base path, visiting the domain root should land in the app.
+  if (APP_BASE_PATH && pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = APP_BASE_PATH;
+    return NextResponse.redirect(url);
+  }
 
   const isAuthRoute = appPathname.startsWith("/auth");
   const isMaintenanceRoute =
