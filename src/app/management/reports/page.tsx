@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import { withBasePath } from "@/lib/app-path";
@@ -13,11 +14,25 @@ function fmt(n: any) {
 
 export default async function ManagementReportsPage() {
   const supabase = await createSupabaseServerClient();
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+  const db = service || supabase;
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: reports, error } = await supabase
+  const { data: me } = await db
+    .from("profiles")
+    .select("role,is_active")
+    .eq("id", userData.user.id)
+    .single();
+
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/new");
+
+  const { data: reports, error } = await db
     .from("maintenance_reports")
     .select("id, report_date, submitted_at, submitted_by, issues_summary")
     .order("report_date", { ascending: false })
@@ -25,12 +40,12 @@ export default async function ManagementReportsPage() {
 
   const dates = (reports || []).map((r: any) => r.report_date);
 
-  const { data: deltas } = await supabase
+  const { data: deltas } = await db
     .from("v_report_deltas")
     .select("report_date, water_delta, electric_delta")
     .in("report_date", dates);
 
-  const { data: exceptions } = await supabase
+  const { data: exceptions } = await db
     .from("v_report_exceptions")
     .select("report_date, exception_reasons")
     .in("report_date", dates);
@@ -43,7 +58,7 @@ export default async function ManagementReportsPage() {
 
   const submitterIds = [...new Set((reports || []).map((r: any) => r.submitted_by).filter(Boolean))];
   const { data: submitters } = submitterIds.length
-    ? await supabase.from("profiles").select("id, full_name").in("id", submitterIds)
+    ? await db.from("profiles").select("id, full_name").in("id", submitterIds)
     : { data: [] as any[] };
   const submitterById = new Map<string, string>();
   (submitters || []).forEach((p: any) => submitterById.set(p.id, p.full_name || p.id));
