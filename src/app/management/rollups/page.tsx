@@ -40,7 +40,7 @@ export default async function RollupsPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen p-6">
+      <main className="min-h-screen px-4 py-4 sm:p-6">
         <div className="mx-auto max-w-5xl">
           <p className="text-sm text-red-600">{error.message}</p>
         </div>
@@ -103,9 +103,9 @@ export default async function RollupsPage() {
   const topMonthlySpikes = [...monthlyAll].sort((a, b) => b.cost_jmd - a.cost_jmd).slice(0, 3);
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen px-4 py-4 sm:p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Usage Rollups</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -115,7 +115,7 @@ export default async function RollupsPage() {
               Rates: Electric JMD {fmt(electricRate)} per kWh • Water JMD {fmt(waterRate)} per unit
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
             </Link>
@@ -177,7 +177,7 @@ export default async function RollupsPage() {
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Last 12 weeks</h2>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="text-left text-gray-600">
                 <tr>
                   <th className="py-2 pr-4">Week</th>
@@ -209,7 +209,7 @@ export default async function RollupsPage() {
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Last 12 months</h2>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="text-left text-gray-600">
                 <tr>
                   <th className="py-2 pr-4">Month</th>

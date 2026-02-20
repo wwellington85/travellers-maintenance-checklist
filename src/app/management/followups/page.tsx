@@ -46,9 +46,9 @@ export default async function FollowupsPage({
   const needsCount = rows?.filter((r) => r.needs_attention).length ?? 0;
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen px-4 py-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Follow-ups</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -56,7 +56,7 @@ export default async function FollowupsPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
             </Link>
@@ -88,7 +88,7 @@ export default async function FollowupsPage({
           </div>
 
           <div className="flex flex-wrap gap-2 text-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground">Status</span>
               <a className={`rounded border px-2 py-1 ${status === "open" ? "bg-black text-white" : ""}`} href="?status=open">
                 open
@@ -104,7 +104,7 @@ export default async function FollowupsPage({
               </a>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground">Attention</span>
               <a className={`rounded border px-2 py-1 ${attention === "needs" ? "bg-black text-white" : ""}`} href={`?status=${status}&attention=needs`}>
                 needs
@@ -120,7 +120,8 @@ export default async function FollowupsPage({
         </section>
 
         <section className="rounded-xl border bg-white shadow-sm overflow-hidden">
-          <div className="grid grid-cols-12 gap-0 border-b bg-gray-50 px-4 py-3 text-xs font-medium text-muted-foreground">
+          <div className="overflow-x-auto">
+          <div className="min-w-[780px] grid grid-cols-12 gap-0 border-b bg-gray-50 px-4 py-3 text-xs font-medium text-muted-foreground">
             <div className="col-span-2">Date</div>
             <div className="col-span-2">Status</div>
             <div className="col-span-2">Assigned</div>
@@ -142,7 +143,7 @@ export default async function FollowupsPage({
                 if (!flags.length && r.needs_attention) flags.push("check readings");
 
                 return (
-                  <div key={r.report_id} className="grid grid-cols-12 px-4 py-3 text-sm">
+                  <div key={r.report_id} className="min-w-[780px] grid grid-cols-12 px-4 py-3 text-sm">
                     <div className="col-span-2">{r.report_date}</div>
                     <div className="col-span-2">{pill(r.followup_status_effective)}</div>
                     <div className="col-span-2">{r.assigned_to || "—"}</div>
@@ -164,6 +165,7 @@ export default async function FollowupsPage({
           ) : (
             <div className="p-6 text-sm text-muted-foreground">No follow-ups found for this filter.</div>
           )}
+          </div>
         </section>
       </div>
     </main>

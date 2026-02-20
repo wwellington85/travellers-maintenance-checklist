@@ -83,16 +83,16 @@ export default async function ManagementStaffPage({
   const notice = statusText(sp?.ok, sp?.err, sp?.msg);
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen px-4 py-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Staff Management</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Add staff, edit details, and control access.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
             </Link>
@@ -147,7 +147,7 @@ export default async function ManagementStaffPage({
             <p className="text-sm text-red-600">{error.message}</p>
           ) : users && users.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[980px] w-full text-sm">
                 <thead className="text-left text-gray-600">
                   <tr>
                     <th className="py-2 pr-4">Name</th>

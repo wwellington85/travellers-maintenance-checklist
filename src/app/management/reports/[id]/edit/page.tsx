@@ -91,16 +91,16 @@ export default async function EditReportPage({
   const typedReport = report as ReportRecord;
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen px-4 py-4 sm:p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Edit Report</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {toInputValue(typedReport.report_date)} • {toInputValue(typedReport.id)}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link className="rounded-lg border px-3 py-2 text-sm" href={`/management/reports/${reportId}`}>
               Cancel
             </Link>
@@ -307,7 +307,7 @@ export default async function EditReportPage({
             </div>
           </section>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button type="submit" className="rounded-lg bg-black px-4 py-2 text-white">
               Save changes
             </button>

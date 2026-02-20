@@ -19,16 +19,16 @@ export default async function ManagementExceptionsPage() {
   const flagged = (rows || []).filter((r) => (r.exception_reasons || []).length > 0);
 
   return (
-    <main className="min-h-screen p-6">
+    <main className="min-h-screen px-4 py-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Exceptions</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Reports with flags that need review.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <a className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/dashboard")}>
               Dashboard
             </a>
