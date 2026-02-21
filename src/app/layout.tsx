@@ -19,8 +19,11 @@ export const metadata: Metadata = {
   applicationName: "Travellers Maintenance",
   manifest: withBasePath("/manifest.webmanifest"),
   icons: {
-    icon: withBasePath("/favicon.ico"),
-    apple: withBasePath("/favicon.ico"),
+    icon: [
+      { url: withBasePath("/icons/icon-192"), sizes: "192x192", type: "image/png" },
+      { url: withBasePath("/icons/icon-512"), sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: withBasePath("/icons/apple-touch"), sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
