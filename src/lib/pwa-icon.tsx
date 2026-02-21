@@ -11,6 +11,7 @@ export function PwaIcon({ size, maskable = false }: PwaIconProps) {
   const cardSize = size - pad * 2;
   const stroke = Math.max(2, Math.round(size * 0.01));
   const leafStroke = Math.max(2, Math.round(size * 0.006));
+  const tStroke = Math.max(12, Math.round(size * 0.055));
 
   return (
     <div
@@ -45,20 +46,32 @@ export function PwaIcon({ size, maskable = false }: PwaIconProps) {
           style={{ display: "block" }}
         >
           <path
-            d="M165 275 C 260 150, 470 145, 690 175 C 760 185, 825 168, 835 125
-               C 860 175, 820 245, 700 240
-               L 560 240
-               C 530 360, 505 525, 495 760
-               C 495 820, 470 845, 370 855
-               C 430 855, 525 855, 625 842
-               C 610 900, 550 930, 390 930
-               C 250 930, 190 905, 170 860
-               C 255 850, 305 835, 330 790
-               C 350 675, 385 470, 430 240
-               L 320 240
-               C 255 240, 205 260, 185 305
-               C 160 285, 150 280, 165 275 Z"
-            fill="#F3E7B2"
+            d="M180 300 C 250 170, 455 145, 705 180 C 770 190, 825 175, 835 125"
+            stroke="#F3E7B2"
+            strokeWidth={tStroke}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d="M835 125 C 870 155, 860 210, 805 235"
+            stroke="#F3E7B2"
+            strokeWidth={Math.max(8, Math.round(tStroke * 0.7))}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d="M510 250 C 485 370, 462 545, 448 825"
+            stroke="#F3E7B2"
+            strokeWidth={Math.max(10, Math.round(tStroke * 0.85))}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d="M300 875 C 425 852, 545 850, 675 865"
+            stroke="#F3E7B2"
+            strokeWidth={Math.max(8, Math.round(tStroke * 0.65))}
+            strokeLinecap="round"
+            fill="none"
           />
 
           <path
