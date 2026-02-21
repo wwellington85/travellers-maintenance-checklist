@@ -74,13 +74,13 @@ export default async function ManagementReportsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Link className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/dashboard")}>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/dashboard">
               Dashboard
             </Link>
-            <Link className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/exceptions")}>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/exceptions">
               Exceptions
             </Link>
-            <Link className="rounded-lg border px-3 py-2 text-sm" href={withBasePath("/management/staff")}>
+            <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/staff">
               Staff
             </Link>
             <form action={withBasePath("/management/reports/export")} method="post">
@@ -127,7 +127,7 @@ export default async function ManagementReportsPage() {
                       </div>
                       <div>
                         {canView ? (
-                          <Link className="underline text-sm" href={withBasePath(`/management/reports/${rid}`)}>
+                          <Link className="underline text-sm" href={`/management/reports/${rid}`}>
                             Open report
                           </Link>
                         ) : (
@@ -183,7 +183,7 @@ export default async function ManagementReportsPage() {
                           </td>
                           <td className="py-2 pr-0">
                             {canView ? (
-                              <Link className="underline" href={withBasePath(`/management/reports/${rid}`)}>
+                              <Link className="underline" href={`/management/reports/${rid}`}>
                                 View
                               </Link>
                             ) : (
