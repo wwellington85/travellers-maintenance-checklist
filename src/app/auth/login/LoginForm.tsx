@@ -27,6 +27,36 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     return `${slug}@travellers.local`;
   }
 
+  function normalizeRedirectPath(input: string) {
+    const value = (input || "").trim();
+    if (!value || !value.startsWith("/") || value.startsWith("//")) return "";
+    return value;
+  }
+
+  function resolvePostLoginPath(
+    requestedPath: string,
+    role: string | null | undefined
+  ) {
+    const requested = normalizeRedirectPath(requestedPath);
+    const isManager = role === "manager" || role === "admin";
+
+    if (isManager) {
+      if (
+        requested.startsWith("/management") ||
+        requested.startsWith("/admin")
+      ) {
+        return requested;
+      }
+      return "/management/dashboard";
+    }
+
+    if (requested.startsWith("/management") || requested.startsWith("/admin")) {
+      return "/new";
+    }
+
+    return requested || "/new";
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
@@ -47,7 +77,22 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       return;
     }
 
-    router.push(redirect);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let role: string | null = null;
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      role = (profile?.role as string | undefined) || null;
+    }
+
+    const destination = resolvePostLoginPath(redirect, role);
+    router.push(destination);
     router.refresh();
   }
 
