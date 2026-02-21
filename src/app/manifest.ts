@@ -11,6 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: withBasePath("/auth/login"),
     scope,
     display: "fullscreen",
+    display_override: ["fullscreen", "standalone"],
     background_color: "#ffffff",
     theme_color: "#ffffff",
     icons: [
