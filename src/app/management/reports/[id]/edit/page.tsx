@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 
@@ -48,13 +49,19 @@ export default async function EditReportPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+  const db = service || supabase;
   const { id: reportId } = await params;
   if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
-  const { data: me } = await supabase
+  const { data: me } = await db
     .from("profiles")
     .select("role,is_active")
     .eq("id", userData.user.id)
@@ -64,21 +71,21 @@ export default async function EditReportPage({
     redirect("/new");
   }
 
-  const { data: report } = await supabase
+  const { data: report } = await db
     .from("maintenance_reports")
     .select("*")
     .eq("id", reportId)
     .single();
   if (!report) redirect("/management/reports");
 
-  const { data: genItems } = await supabase
+  const { data: genItems } = await db
     .from("generator_check_items")
     .select("category,item_key,status,notes")
     .eq("report_id", reportId)
     .order("category", { ascending: true })
     .order("item_key", { ascending: true });
 
-  const { data: keyRows } = await supabase
+  const { data: keyRows } = await db
     .from("generator_item_keys")
     .select("category,item_key,label")
     .eq("is_active", true);

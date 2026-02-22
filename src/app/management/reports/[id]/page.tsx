@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import SaveStatusBanner from "@/components/SaveStatusBanner";
@@ -23,6 +24,12 @@ export default async function ReportDetailPage({
   searchParams,
 }: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | undefined>>; }) {
   const supabase = await createSupabaseServerClient();
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+  const db = service || supabase;
 
   const { id: reportId } = await params;
   
@@ -33,7 +40,14 @@ export default async function ReportDetailPage({
   if (!userData.user) redirect("/auth/login");
   if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
-  const { data: report, error: repErr } = await supabase
+  const { data: me } = await db
+    .from("profiles")
+    .select("role,is_active")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/new");
+
+  const { data: report, error: repErr } = await db
     .from("maintenance_reports")
     .select("*")
     .eq("id", reportId)
@@ -45,7 +59,7 @@ export default async function ReportDetailPage({
 
   const submitterProfile = report.submitted_by
     ? await (async () => {
-        const { data } = await supabase
+        const { data } = await db
           .from("profiles")
           .select("id, full_name")
           .eq("id", report.submitted_by)
@@ -54,13 +68,13 @@ export default async function ReportDetailPage({
       })()
     : null;
 
-  const { data: deltaRow } = await supabase
+  const { data: deltaRow } = await db
     .from("v_report_deltas")
     .select("water_delta, electric_delta")
     .eq("report_date", reportDate)
     .maybeSingle();
 
-  const { data: exRow } = await supabase
+  const { data: exRow } = await db
     .from("v_report_exceptions")
     .select("exception_reasons, generator_not_completed_count")
     .eq("report_date", reportDate)
@@ -69,25 +83,25 @@ export default async function ReportDetailPage({
   const exceptionReasons: string[] = exRow?.exception_reasons || [];
   const genNotCompletedCount = exRow?.generator_not_completed_count ?? 0;
 
-  const { data: followup } = await supabase
+  const { data: followup } = await db
     .from("maintenance_followups")
     .select("status, assigned_to, internal_notes, reading_anomaly_type, reading_anomaly_notes, corrected_water_reading, corrected_electric_reading, updated_at")
     .eq("report_id", reportId)
     .maybeSingle();
 
-  const { data: staff } = await supabase
+  const { data: staff } = await db
     .from("profiles")
     .select("id, full_name, role, is_active")
     .in("role", ["maintenance", "manager", "admin"])
     .eq("is_active", true)
     .order("full_name", { ascending: true });
 
-  const { data: genItems, error: genErr } = await supabase
+  const { data: genItems, error: genErr } = await db
     .from("generator_check_items")
     .select("category,item_key,status,notes")
     .eq("report_id", reportId);
 
-  const { data: keyRows } = await supabase
+  const { data: keyRows } = await db
     .from("generator_item_keys")
     .select("category,item_key,label")
     .eq("is_active", true);

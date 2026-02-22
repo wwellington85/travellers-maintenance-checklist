@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import PrintButton from "./PrintButton";
 
@@ -11,13 +12,26 @@ export default async function ReportPrintPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+  const db = service || supabase;
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/auth/login");
 
   const { id: reportId } = await params;
   if (!UUID_RE.test(reportId)) redirect("/management/reports");
 
-  const { data: report } = await supabase
+  const { data: me } = await db
+    .from("profiles")
+    .select("role,is_active")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (!me?.is_active || !["manager", "admin"].includes(me.role)) redirect("/new");
+
+  const { data: report } = await db
     .from("maintenance_reports")
     .select("*")
     .eq("id", reportId)
@@ -25,7 +39,7 @@ export default async function ReportPrintPage({
 
   if (!report) redirect("/management/reports");
 
-  const { data: exRow } = await supabase
+  const { data: exRow } = await db
     .from("v_report_exceptions")
     .select("exception_reasons")
     .eq("report_date", report.report_date)
