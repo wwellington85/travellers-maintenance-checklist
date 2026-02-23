@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import AutoHideNotice from "@/components/AutoHideNotice";
+import FormPendingButton from "@/components/FormPendingButton";
 import { createClient } from "@supabase/supabase-js";
 import { withBasePath } from "@/lib/app-path";
 
@@ -10,8 +11,8 @@ function statusText(ok?: string, err?: string, msg?: string) {
   if (ok === "staff_created") return { type: "ok", text: "Staff account created." };
   if (ok === "staff_invited") return { type: "ok", text: "Staff created and invite email sent." };
   if (ok === "staff_updated") return { type: "ok", text: "Staff updated." };
-  if (ok === "invite_sent") return { type: "ok", text: "Password setup/reset email sent." };
-  if (ok === "self_reset_sent") return { type: "ok", text: "Password reset email sent to your address." };
+  if (ok === "invite_sent") return { type: "ok", text: "Password reset email sent. Ask the user to check inbox/spam." };
+  if (ok === "self_reset_sent") return { type: "ok", text: "Password reset email sent to your address. Please check inbox/spam." };
 
   if (err === "invalid_input") return { type: "err", text: "Please fill all required fields correctly." };
   if (err === "forbidden_role") return { type: "err", text: "Only admins can assign admin role." };
@@ -103,7 +104,11 @@ export default async function ManagementStaffPage({
               Reports
             </Link>
             <form action={withBasePath("/management/staff/send-self-reset")} method="post">
-              <button className="rounded-lg border px-3 py-2 text-sm">Reset my password</button>
+              <FormPendingButton
+                idleLabel="Reset my password"
+                pendingLabel="Sending reset email..."
+                className="rounded-lg border px-3 py-2 text-sm"
+              />
             </form>
             <SignOutButton />
           </div>
