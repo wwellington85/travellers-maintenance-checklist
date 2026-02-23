@@ -15,7 +15,7 @@ function statusText(ok?: string, err?: string, msg?: string) {
 
   if (err === "invalid_input") return { type: "err", text: "Please fill all required fields correctly." };
   if (err === "forbidden_role") return { type: "err", text: "Only admins can assign admin role." };
-  if (err === "invite_failed") return { type: "err", text: "Could not send invite email." };
+  if (err === "invite_failed") return { type: "err", text: "Could not send password reset email." };
   if (err === "create_failed") return { type: "err", text: "Could not create auth user." };
   if (err === "maintenance_creds_required")
     return { type: "err", text: "Maintenance users require username and password (8+ chars)." };
@@ -109,7 +109,7 @@ export default async function ManagementStaffPage({
           </div>
         </header>
 
-        {notice ? <AutoHideNotice type={notice.type as "ok" | "err"} text={notice.text} /> : null}
+        {notice ? <AutoHideNotice type={notice.type as "ok" | "err"} text={notice.text} ms={7000} /> : null}
 
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Add Staff</h2>
