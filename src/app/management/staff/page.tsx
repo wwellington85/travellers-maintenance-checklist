@@ -11,6 +11,7 @@ function statusText(ok?: string, err?: string, msg?: string) {
   if (ok === "staff_invited") return { type: "ok", text: "Staff created and invite email sent." };
   if (ok === "staff_updated") return { type: "ok", text: "Staff updated." };
   if (ok === "invite_sent") return { type: "ok", text: "Password setup/reset email sent." };
+  if (ok === "self_reset_sent") return { type: "ok", text: "Password reset email sent to your address." };
 
   if (err === "invalid_input") return { type: "err", text: "Please fill all required fields correctly." };
   if (err === "forbidden_role") return { type: "err", text: "Only admins can assign admin role." };
@@ -25,6 +26,8 @@ function statusText(ok?: string, err?: string, msg?: string) {
   if (err === "password_update_failed") return { type: "err", text: "Could not update password." };
   if (err === "missing_real_email") return { type: "err", text: "Add a real email first, then send invite." };
   if (err === "missing_id") return { type: "err", text: "Missing staff ID." };
+  if (err === "forbidden_reset") return { type: "err", text: "Only admins can send reset links for other users." };
+  if (err === "no_email_on_account") return { type: "err", text: "No email is set on your account." };
 
   return null;
 }
@@ -99,6 +102,9 @@ export default async function ManagementStaffPage({
             <Link className="rounded-lg border px-3 py-2 text-sm" href="/management/reports">
               Reports
             </Link>
+            <form action={withBasePath("/management/staff/send-self-reset")} method="post">
+              <button className="rounded-lg border px-3 py-2 text-sm">Reset my password</button>
+            </form>
             <SignOutButton />
           </div>
         </header>
@@ -209,9 +215,11 @@ export default async function ManagementStaffPage({
                           </label>
                           <div className="flex flex-wrap gap-2">
                             <button className="rounded border px-2 py-1 text-sm">Save</button>
-                            <button name="send_invite" value="true" className="rounded border px-2 py-1 text-sm">
-                              Save + Send invite
-                            </button>
+                            {me.role === "admin" ? (
+                              <button name="send_invite" value="true" className="rounded border px-2 py-1 text-sm">
+                                Save + Send reset
+                              </button>
+                            ) : null}
                             <Link className="rounded border px-2 py-1 text-sm" href="/management/staff">
                               Cancel
                             </Link>
@@ -236,10 +244,10 @@ export default async function ManagementStaffPage({
                             <Link className="rounded border px-2 py-1 text-sm" href={`/management/staff?edit=${u.id}`}>
                               Edit
                             </Link>
-                            {!isPlaceholderEmail && rowEmail ? (
+                            {me.role === "admin" && !isPlaceholderEmail && rowEmail ? (
                               <form action={withBasePath("/management/staff/send-invite")} method="post">
                                 <input type="hidden" name="id" value={u.id} />
-                                <button className="rounded border px-2 py-1 text-sm">Send invite</button>
+                                <button className="rounded border px-2 py-1 text-sm">Send reset</button>
                               </form>
                             ) : null}
                           </div>
@@ -326,9 +334,11 @@ export default async function ManagementStaffPage({
                                     placeholder="New password"
                                   />
                                   <button className="rounded border px-2 py-1">Save</button>
-                                  <button name="send_invite" value="true" className="rounded border px-2 py-1">
-                                    Save + Send invite
-                                  </button>
+                                  {me.role === "admin" ? (
+                                    <button name="send_invite" value="true" className="rounded border px-2 py-1">
+                                      Save + Send reset
+                                    </button>
+                                  ) : null}
                                 </form>
                                 <Link className="rounded border px-2 py-1" href="/management/staff">
                                   Cancel
@@ -363,10 +373,10 @@ export default async function ManagementStaffPage({
                                 <Link className="rounded border px-2 py-1" href={`/management/staff?edit=${u.id}`}>
                                   Edit
                                 </Link>
-                                {!isPlaceholderEmail && rowEmail ? (
+                                {me.role === "admin" && !isPlaceholderEmail && rowEmail ? (
                                   <form action={withBasePath("/management/staff/send-invite")} method="post">
                                     <input type="hidden" name="id" value={u.id} />
-                                    <button className="rounded border px-2 py-1">Send invite</button>
+                                    <button className="rounded border px-2 py-1">Send reset</button>
                                   </form>
                                 ) : null}
                               </div>

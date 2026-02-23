@@ -36,34 +36,23 @@ export async function POST(req: NextRequest) {
   if (!me?.is_active || !["manager", "admin"].includes(me.role)) {
     return NextResponse.redirect(new URL(withBasePath("/new"), req.url), { status: 303 });
   }
-  if (me.role !== "admin") {
-    redirectUrl.searchParams.set("err", "forbidden_reset");
-    return NextResponse.redirect(redirectUrl, { status: 303 });
-  }
-
-  const form = await req.formData();
-  const id = String(form.get("id") || "");
-  if (!id) {
-    redirectUrl.searchParams.set("err", "missing_id");
-    return NextResponse.redirect(redirectUrl, { status: 303 });
-  }
 
   const service = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const setPasswordUrl = getAppUrl("/auth/set-password", req.nextUrl.origin);
 
-  const { data } = await service.auth.admin.getUserById(id);
+  const { data } = await service.auth.admin.getUserById(userData.user.id);
   const email = (data?.user?.email || "").toLowerCase();
   if (!email || email.endsWith("@travellers.local")) {
-    redirectUrl.searchParams.set("err", "missing_real_email");
+    redirectUrl.searchParams.set("err", "no_email_on_account");
     return NextResponse.redirect(redirectUrl, { status: 303 });
   }
 
+  const setPasswordUrl = getAppUrl("/auth/set-password", req.nextUrl.origin);
   const { error } = await service.auth.resetPasswordForEmail(email, {
     redirectTo: setPasswordUrl,
   });
 
-  redirectUrl.searchParams.set("ok", error ? "invite_failed" : "invite_sent");
+  redirectUrl.searchParams.set("ok", error ? "invite_failed" : "self_reset_sent");
   return NextResponse.redirect(redirectUrl, { status: 303 });
 }

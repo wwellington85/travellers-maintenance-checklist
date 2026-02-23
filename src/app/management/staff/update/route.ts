@@ -129,6 +129,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (sendInvite && effectiveEmail && !effectiveEmail.endsWith("@travellers.local")) {
+    if (me.role !== "admin") {
+      redirectUrl.searchParams.set("err", "forbidden_reset");
+      return NextResponse.redirect(redirectUrl, { status: 303 });
+    }
     const sent = await sendReset(service, effectiveEmail, setPasswordUrl);
     redirectUrl.searchParams.set("ok", sent ? "invite_sent" : "invite_failed");
     return NextResponse.redirect(redirectUrl, { status: 303 });
